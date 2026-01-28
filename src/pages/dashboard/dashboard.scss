@@ -17,12 +17,38 @@
     background: white;
     padding: 2rem;
     border-radius: 16px;
-    width: 500px;
+    width: 600px;
     max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     position: relative;
     box-shadow: 0 20px 50px rgba(0,0,0,0.2);
 
-    h2 { margin-top: 0; color: #326C58; }
+    /* Scrollbar styling */
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+    &::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+        &:hover {
+            background: #a1a1a1;
+        }
+    }
+
+    h2 { 
+        margin-top: 0; 
+        margin-bottom: 1.5rem;
+        color: #326C58; 
+        font-weight: 700;
+        border-bottom: 2px solid #326C58;
+        padding-bottom: 0.5rem;
+        display: inline-block;
+    }
     
     .close-btn {
         position: absolute;
@@ -30,84 +56,102 @@
         right: 1rem;
         background: none;
         border: none;
-        padding: 0;
+        padding: 5px;
         cursor: pointer;
         color: #999;
-        &:hover { color: #333; }
+        transition: color 0.2s;
+        &:hover { color: #d00; }
     }
 
-    .search-form {
+    .form-row {
         display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1.5rem;
+        gap: 1rem;
+        margin-bottom: 1rem;
         
-        input {
+        .form-group {
             flex: 1;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-        button {
-            border-radius: 8px;
-            padding: 0 1rem;
-        }
-    }
-
-    .gender-select {
-        margin-bottom: 1.5rem;
-        label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; }
-        select {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-    }
-
-    .search-results {
-        max-height: 200px;
-        overflow-y: auto;
-        
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            
-            button {
-                padding: 6px 12px;
-                font-size: 0.8rem;
-            }
-            
-            button.btn-joined {
-                background: #eee;
-                color: #888;
-                border-color: #eee;
-                cursor: default;
-            }
+            margin-bottom: 0 !important;
         }
     }
 
     .person-form {
         .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 1.2rem;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
             
             label {
-                font-size: 0.9rem;
-                font-weight: 500;
+                font-size: 0.85rem;
+                font-weight: 600;
                 color: #555;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
             }
             
-            input, select {
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 8px;
-                font-size: 1rem;
+            input, select, textarea {
+                padding: 12px;
+                border: 1.5px solid #eee;
+                border-radius: 10px;
+                font-size: 0.95rem;
+                background: #fdfdfd;
+                transition: all 0.2s;
+                
+                &:focus {
+                    outline: none;
+                    border-color: #326C58;
+                    box-shadow: 0 0 0 4px rgba(50, 108, 88, 0.1);
+                    background: white;
+                }
             }
+        }
+
+        h3 {
+            font-size: 1.1rem;
+            color: #326C58;
+            margin: 1.5rem 0 1rem 0;
+            padding-top: 1rem;
+            border-top: 1px dashed #ddd;
+        }
+    }
+
+    /* Common Buttons */
+    .primary-btn {
+        background: #326C58;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: fit-content;
+
+        &:hover {
+            background: #2a5a4a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(50, 108, 88, 0.3);
+        }
+    }
+
+    .ghost-btn {
+        background: transparent;
+        border: 2px solid #326C58;
+        color: #326C58;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+            background: rgba(50, 108, 88, 0.05);
         }
     }
 }
@@ -254,79 +298,209 @@
 
 /* Tree Visualization */
 .tree-visualizer {
-    background: linear-gradient(135deg, #2c2a26 0%, #1a1a1a 100%); /* Dark wood feel */
-    border-radius: 16px;
+    background: #0f0f11;
+    background-image: 
+        radial-gradient(circle at 1px 1px, rgba(212, 175, 55, 0.1) 1px, transparent 0);
+    background-size: 30px 30px;
+    border-radius: 24px;
     flex: 1;
     position: relative;
-    overflow: hidden;
+    overflow: hidden; /* Scroll handled by zoom-container */
     color: #F5F5F0;
-    box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+    box-shadow: inset 0 0 80px rgba(0,0,0,0.9);
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
+
+    .zoom-container {
+        flex: 1;
+        overflow: auto;
+        display: block; /* Important for scrollbars */
+        padding: 50px;
+        cursor: grab;
+        &:active { cursor: grabbing; }
+    }
+
+    .tree-canvas {
+        background: transparent;
+        position: relative;
+        transform-origin: 0 0; /* Important for zoom */
+        transition: transform 0.2s cubic-bezier(0.1, 0.7, 0.1, 1);
+    }
 
     .placeholder-msg {
         text-align: center;
-        opacity: 0.6;
+        background: rgba(255,255,255,0.05);
+        padding: 3rem;
+        border-radius: 24px;
+        border: 1px dashed rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        
+        h3 { color: #D4AF37; margin-bottom: 0.5rem; }
+        p { opacity: 0.6; margin-bottom: 1.5rem; }
     }
     
-    /* Nodes */
     .tree-node {
-        background: #F5F5F0;
-        color: #333;
-        padding: 10px;
-        border-radius: 8px; /* Hexagon shape is complex in pure CSS without clip-path, simple rounded rect for now unless specifically requested hex */
-        /* Hexagon feel via clip-path */
-        /* clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); */
-        /* Let's stay standard rounded card for reliability */
-        
+        position: absolute;
+        width: 150px;
+        background: #1a1a1d;
+        border: 2px solid rgba(212, 175, 55, 0.3);
+        border-radius: 16px;
+        padding: 12px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        width: 120px;
-        position: absolute;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        border: 2px solid #D4AF37;
-        
-        img {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid white;
-            margin-bottom: 5px;
+        text-align: center;
+        transition: all 0.3s ease;
+        z-index: 10;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+
+        &:hover {
+            transform: translateY(-5px);
+            border-color: #D4AF37;
+            
+            .node-actions {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+                pointer-events: auto;
+            }
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            margin-bottom: 8px;
+            
+            img {
+                width: 64px;
+                height: 64px;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 3px solid #2a2a2e;
+                background: #0f0f11;
+            }
+
+            .gender-badge {
+                position: absolute;
+                bottom: 0px;
+                right: -2px;
+                width: 22px;
+                height: 22px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid #1a1a1d;
+                font-size: 11px;
+                font-weight: bold;
+                color: white;
+                
+                &.male { background: #4A90E2; }
+                &.female { background: #FF69B4; }
+                &.other { background: #9B59B6; }
+            }
         }
         
         .name {
-            font-weight: bold;
+            font-weight: 700;
             font-size: 0.8rem;
-            text-align: center;
+            color: #fff;
+            margin-bottom: 4px;
+            line-height: 1.2;
         }
+        
         .dates {
-            font-size: 0.6rem;
-            opacity: 0.7;
+            font-size: 0.65rem;
+            color: #D4AF37;
+            background: rgba(212, 175, 55, 0.1);
+            padding: 1px 8px;
+            border-radius: 8px;
+        }
+
+        .node-actions {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(5px);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            padding-top: 10px;
+            z-index: 20;
+            width: 140px;
+            pointer-events: none;
+
+            button {
+                background: #D4AF37;
+                border: none;
+                width: 100%;
+                padding: 6px 12px;
+                border-radius: 12px;
+                color: #000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                cursor: pointer;
+                font-size: 0.65rem;
+                font-weight: 800;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+                transition: all 0.2s;
+
+                &:hover {
+                    background: #fdfdfd;
+                    transform: scale(1.05);
+                }
+
+                &.btn-spouse { background: #F5F5F0; }
+            }
         }
     }
 
     .fab-add {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        width: 48px;
-        height: 48px;
+        position: fixed;
+        bottom: 40px;
+        right: 40px;
+        width: 60px;
+        height: 60px;
         border-radius: 50%;
         background: #D4AF37;
-        color: #1a1a1a;
+        color: #000;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        z-index: 10;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(212, 175, 55, 0.3);
+        z-index: 1000;
         border: none;
         cursor: pointer;
-        transition: transform 0.2s;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         
-        &:hover { transform: scale(1.1); }
+        &:hover { 
+            transform: scale(1.1) rotate(90deg);
+            background: #F5F5F0;
+        }
+        
+        svg {
+            width: 32px;
+            height: 32px;
+        }
+    }
+
+    .generation-label {
+        position: absolute;
+        left: 20px;
+        color: rgba(212, 175, 55, 0.4);
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        pointer-events: none;
+        border-bottom: 1px dashed rgba(212, 175, 55, 0.1);
+        width: 100%;
+        display: flex;
+        align-items: center;
+        padding-bottom: 5px;
+        z-index: 1;
     }
 
     svg.connections {
@@ -336,11 +510,17 @@
         width: 100%;
         height: 100%;
         pointer-events: none;
+        z-index: 2;
         
-        line {
+        path, line {
             stroke: #D4AF37;
             stroke-width: 2;
-            opacity: 0.5;
+            opacity: 0.6;
+            fill: none;
+        }
+
+        .spouse-line {
+            stroke-dasharray: 8,4;
         }
     }
 }
