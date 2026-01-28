@@ -1,0 +1,125 @@
+┌─────────────────────────────────────────────────────────────────┐
+│                    💬 ZONE DE CHAT                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Messages affichés ici...                                      │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │  📎 Pièces jointes (si présentes)                         │ │
+│  │  ┌────┐ ┌────┐                                            │ │
+│  │  │IMG │ │VID │  [x] pour supprimer                       │ │
+│  │  └────┘ └────┘                                            │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │  📤 BARRE DE PROGRESSION (pendant l'upload)               │ │
+│  │                                                           │ │
+│  │  Upload en cours...                              67%     │ │
+│  │  ████████████████████░░░░░░░░░░░░                        │ │
+│  │  └─ Gradient vert avec effet shimmer animé               │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │  📷  ┌──────────────────────────────────────┐  ➤         │ │
+│  │  │   │ Écrivez votre message...             │  │         │ │
+│  │  └───└──────────────────────────────────────┘──┘         │ │
+│  │   ↑                                            ↑          │ │
+│  │   │                                            │          │ │
+│  │   Clic ici pour ouvrir                    Envoyer        │ │
+│  │   le sélecteur de fichiers                               │ │
+│  └───────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════
+                    🎯 FLUX D'UTILISATION
+═══════════════════════════════════════════════════════════════════
+
+ÉTAPE 1 : Cliquer sur l'icône 📷
+┌─────────────────────────────────────────┐
+│  L'icône est grise normalement          │
+│  Au survol → devient verte (#326C58)    │
+│  Pendant upload → désactivée (50%)      │
+└─────────────────────────────────────────┘
+
+ÉTAPE 2 : Sélectionner un fichier
+┌─────────────────────────────────────────┐
+│  ┌───────────────────────────────────┐  │
+│  │  📁 Ouvrir                        │  │
+│  │                                   │  │
+│  │  📂 Documents                     │  │
+│  │  📂 Images                        │  │
+│  │  📂 Vidéos                        │  │
+│  │                                   │  │
+│  │  📄 photo.jpg                     │  │
+│  │  📄 video.mp4                     │  │
+│  │  📄 document.pdf                  │  │
+│  │                                   │  │
+│  │         [Annuler]  [Ouvrir]       │  │
+│  └───────────────────────────────────┘  │
+│  Sélecteur natif de Windows             │
+└─────────────────────────────────────────┘
+
+ÉTAPE 3 : Upload automatique
+┌─────────────────────────────────────────┐
+│  ✓ Validation de la taille (max 50MB)  │
+│  ✓ Détection automatique du type       │
+│  ✓ Upload avec progression             │
+│  ✓ Ajout aux pièces jointes            │
+└─────────────────────────────────────────┘
+
+ÉTAPE 4 : Envoyer le message
+┌─────────────────────────────────────────┐
+│  Le fichier est attaché au message     │
+│  Cliquer sur ➤ pour envoyer            │
+└─────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════
+                    🎨 DÉTECTION AUTOMATIQUE
+═══════════════════════════════════════════════════════════════════
+
+📸 IMAGES (détectées automatiquement)
+├─ .jpg, .jpeg, .png, .gif
+├─ .bmp, .webp, .svg, .ico
+└─ .heic, .heif
+
+🎬 VIDÉOS (détectées automatiquement)
+├─ .mp4, .avi, .mov, .wmv
+├─ .flv, .mkv, .webm, .m4v
+└─ .3gp, .mpeg, .mpg
+
+📄 FICHIERS (tous les autres)
+├─ .pdf, .doc, .docx
+├─ .txt, .zip, .rar
+└─ Tout autre format
+
+═══════════════════════════════════════════════════════════════════
+                    ⚡ FONCTIONNALITÉS
+═══════════════════════════════════════════════════════════════════
+
+✅ Sélection native de fichiers (interface Windows/Mac/Linux)
+✅ Détection automatique du type (pas besoin de choisir)
+✅ Barre de progression en temps réel (0% → 100%)
+✅ Validation de taille (alerte si > 50MB)
+✅ Gestion d'erreurs (message clair en cas de problème)
+✅ Désactivation du bouton pendant l'upload
+✅ Rafraîchissement automatique de la liste des médias
+✅ Design professionnel avec animations fluides
+✅ Reset automatique après upload
+✅ Support multi-formats (images, vidéos, documents)
+
+═══════════════════════════════════════════════════════════════════
+                    🎯 AVANTAGES
+═══════════════════════════════════════════════════════════════════
+
+AVANT (système manuel)                APRÈS (système automatique)
+─────────────────────────────────────────────────────────────────
+❌ Entrer l'URL manuellement         ✅ Clic → Sélection → Upload
+❌ Choisir le type (Image/Vidéo)     ✅ Détection automatique
+❌ Pas de validation                 ✅ Validation 50MB
+❌ Pas de feedback                   ✅ Barre de progression
+❌ Complexe pour l'utilisateur       ✅ Simple et intuitif
+❌ Risque d'erreurs                  ✅ Gestion d'erreurs
+
+═══════════════════════════════════════════════════════════════════
