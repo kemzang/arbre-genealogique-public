@@ -4,6 +4,7 @@ import './App.scss'
 import RegisterPage from './auth/register/page'
 import LoginPage from './auth/login/page'
 import DashboardPage from './pages/dashboard/page'
+import ErrorBoundary from './components/ErrorBoundary'
 import { authService } from './services/auth.service';
 
 function AuthPage() {
@@ -56,7 +57,9 @@ function App() {
           path="/dashboard" 
           element={
             <ProtectedRoute>
-              <DashboardPage />
+              <ErrorBoundary>
+                <DashboardPage />
+              </ErrorBoundary>
             </ProtectedRoute>
           } 
         />
