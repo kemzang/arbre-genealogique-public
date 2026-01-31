@@ -33,6 +33,7 @@ import { chatService, type Message, type ChatRoom, type CreateRoomRequest } from
 import { memberService, type MemberStatus } from '../../services/member.service';
 import { mediaService, type MediaItem } from '../../services/media.service';
 import { eventService, type FamilyEvent, type CreateEventRequest } from '../../services/event.service';
+import { useSafeAsync } from '../../hooks/useSafeAsync';
 
 /**
  * Construit l'URL complète d'un média
@@ -59,6 +60,7 @@ const getMediaUrl = (urlPath: string): string => {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { safeSetState, safeAsync } = useSafeAsync();
   const [user, setUser] = useState<User | null>(null);
   const [currentFamily, setCurrentFamily] = useState<MemberStatus | null>(null);
   const [activeTab, setActiveTab] = useState<'TREE' | 'CHAT' | 'EVENTS'>('TREE');
@@ -414,92 +416,109 @@ export default function DashboardPage() {
           return;
       }
 
-      try {
-          // 1. Create the Person
-          const createdPerson = await treeService.createPerson({
-              familyId: currentFamily.familyId,
-              firstName: newPerson.firstName,
-              lastName: newPerson.lastName,
-              gender: newPerson.gender as 'M'|'F'|'O',
-              birthDate: newPerson.birthDate
-          });
+      await safeAsync(
+          async () => {
+              // 1. Create the Person
+              const createdPerson = await treeService.createPerson({
+                  familyId: currentFamily.familyId,
+                  firstName: newPerson.firstName,
+                  lastName: newPerson.lastName,
+                  gender: newPerson.gender as 'M'|'F'|'O',
+                  birthDate: newPerson.birthDate
+              });
 
-          // 2. Create the Relationship(s)
-          if (relatedPersonId && createdPerson.id) {
-              if (relationshipType === 'SPOUSE') {
-                  await treeService.createRelationship({
-                      personAId: createdPerson.id,
-                      personBId: relatedPersonId,
-                      type: 'UNION',
-                      isBiological: true
-                  });
-              } else if (relationshipType === 'SIBLING') {
-                  // NEW: link to the same parents as the sibling
-                  const parentRels = treeData?.relationships.filter((r: Relationship) => r.type === 'PARENTAL' && r.personBId === relatedPersonId);
-                  if (parentRels && parentRels.length > 0) {
-                      for (const rel of parentRels) {
+              // 2. Create the Relationship(s)
+              if (relatedPersonId && createdPerson.id) {
+                  if (relationshipType === 'SPOUSE') {
+                      await treeService.createRelationship({
+                          personAId: createdPerson.id,
+                          personBId: relatedPersonId,
+                          type: 'UNION',
+                          isBiological: true
+                      });
+                  } else if (relationshipType === 'SIBLING') {
+                      // NEW: link to the same parents as the sibling
+                      const parentRels = treeData?.relationships.filter((r: Relationship) => r.type === 'PARENTAL' && r.personBId === relatedPersonId);
+                      if (parentRels && parentRels.length > 0) {
+                          for (const rel of parentRels) {
+                              await treeService.createRelationship({
+                                  personAId: rel.personAId,
+                                  personBId: createdPerson.id,
+                                  type: 'PARENTAL',
+                                  isBiological: true
+                              });
+                          }
+                      } else {
+                          // Fallback: just a sibling link if no parents found
                           await treeService.createRelationship({
-                              personAId: rel.personAId,
+                              personAId: relatedPersonId,
+                              personBId: createdPerson.id,
+                              type: 'SIBLING',
+                              isBiological: true
+                          });
+                      }
+                  } else if (relationshipType === 'PARENTAL') {
+                      await treeService.createRelationship({
+                          personAId: createdPerson.id,
+                          personBId: relatedPersonId,
+                          type: 'PARENTAL',
+                          isBiological: true
+                      });
+                  } else if (relationshipType === 'CHILD') {
+                      await treeService.createRelationship({
+                          personAId: relatedPersonId,
+                          personBId: createdPerson.id,
+                          type: 'PARENTAL',
+                          isBiological: true
+                      });
+                      
+                      // Link to spouse too
+                      const union = treeData?.relationships.find((r: Relationship) => 
+                          r.type === 'UNION' && (r.personAId === relatedPersonId || r.personBId === relatedPersonId)
+                      );
+                      if (union) {
+                          const otherParentId = union.personAId === relatedPersonId ? union.personBId : union.personAId;
+                          await treeService.createRelationship({
+                              personAId: otherParentId,
                               personBId: createdPerson.id,
                               type: 'PARENTAL',
                               isBiological: true
                           });
                       }
-                  } else {
-                      // Fallback: just a sibling link if no parents found
-                      await treeService.createRelationship({
-                          personAId: relatedPersonId,
-                          personBId: createdPerson.id,
-                          type: 'SIBLING',
-                          isBiological: true
-                      });
-                  }
-              } else if (relationshipType === 'PARENTAL') {
-                  await treeService.createRelationship({
-                      personAId: createdPerson.id,
-                      personBId: relatedPersonId,
-                      type: 'PARENTAL',
-                      isBiological: true
-                  });
-              } else if (relationshipType === 'CHILD') {
-                  await treeService.createRelationship({
-                      personAId: relatedPersonId,
-                      personBId: createdPerson.id,
-                      type: 'PARENTAL',
-                      isBiological: true
-                  });
-                  
-                  // Link to spouse too
-                  const union = treeData?.relationships.find((r: Relationship) => 
-                      r.type === 'UNION' && (r.personAId === relatedPersonId || r.personBId === relatedPersonId)
-                  );
-                  if (union) {
-                      const otherParentId = union.personAId === relatedPersonId ? union.personBId : union.personAId;
-                      await treeService.createRelationship({
-                          personAId: otherParentId,
-                          personBId: createdPerson.id,
-                          type: 'PARENTAL',
-                          isBiological: true
-                      });
                   }
               }
-          }
 
-          alert("Membre ajouté avec succès !");
-          setShowAddPersonModal(false);
-          setNewPerson({ firstName: '', lastName: '', gender: 'M', birthDate: '' });
-          setRelatedPersonId(null);
-          setRelationshipType('CHILD');
-          // Recharger les données de l'arbre
-          if (currentFamily) {
-            treeService.getTree(currentFamily.familyId)
-              .then(tree => setTreeData(tree))
-              .catch(err => console.error("Error reloading tree:", err));
+              return createdPerson;
+          },
+          () => {
+              // Succès - Fermer la modal et réinitialiser le formulaire
+              safeSetState(() => {
+                  setShowAddPersonModal(false);
+                  setNewPerson({ firstName: '', lastName: '', gender: 'M', birthDate: '' });
+                  setRelatedPersonId(null);
+                  setRelationshipType('CHILD');
+              });
+              
+              // Recharger les données de l'arbre
+              if (currentFamily) {
+                  safeAsync(
+                      () => treeService.getTree(currentFamily.familyId),
+                      (tree) => {
+                          safeSetState(() => setTreeData(tree));
+                          alert("Membre ajouté avec succès !");
+                      },
+                      (err) => {
+                          console.error("Error reloading tree:", err);
+                          alert("Membre ajouté, mais erreur lors du rechargement de l'arbre. Veuillez rafraîchir la page.");
+                      }
+                  );
+              }
+          },
+          (error) => {
+              console.error("Error creating person/relationship", error);
+              alert("Erreur lors de l'ajout. Vérifiez les données.");
           }
-      } catch (error) {
-          console.error("Error creating person/relationship", error);
-          alert("Erreur lors de l'ajout. Vérifiez les données.");
-      }
+      );
   };
 
   const handleLogout = () => {
