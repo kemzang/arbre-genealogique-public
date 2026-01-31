@@ -9,7 +9,7 @@ export interface Person {
   deathDate?: string;
   gender: 'M' | 'F' | 'O';
   bio?: string;
-  photoUrl?: string; // Suggéré pour l'affichage
+  profilePictureUrl?: string; // Photo de profil (hérité du User si lié)
   linkedUserId?: number;
 }
 
@@ -34,6 +34,7 @@ export interface CreatePersonRequest {
   deathDate?: string;
   gender: 'M' | 'F' | 'O';
   bio?: string;
+  profilePictureUrl?: string; // Optionnel (hérité du User si lié)
   linkedUserId?: number;
 }
 

@@ -26,12 +26,6 @@ export default function LoginPage({onSwitch}: {onSwitch: () => void}) {
     <div className="form-container sign-in-container">
       <form onSubmit={handleLogin}>
         <h1>Connexion</h1>
-        <div className="social-container">
-          <a href="#" className="social"><i className="fab fa-facebook-f"></i></a>
-          <a href="#" className="social"><i className="fab fa-google-plus-g"></i></a>
-          <a href="#" className="social"><i className="fab fa-linkedin-in"></i></a>
-        </div>
-        <span>ou utilisez votre compte</span>
         <input 
           type="email" 
           placeholder="Email" 

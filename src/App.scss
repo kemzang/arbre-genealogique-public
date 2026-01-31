@@ -83,11 +83,28 @@ form {
 	background-color: #FFFFFF;
 	display: flex;
 	align-items: center;
-	justify-content: center;
+	justify-content: flex-start; /* Changé de center à flex-start */
 	flex-direction: column;
-	padding: 0 50px;
+	padding: 20px 50px; /* Réduit le padding vertical */
 	height: 100%;
 	text-align: center;
+	overflow-y: auto; /* Permet le scroll si nécessaire */
+	
+	/* Scrollbar styling pour le formulaire */
+	&::-webkit-scrollbar {
+		width: 6px;
+	}
+	&::-webkit-scrollbar-track {
+		background: #f1f1f1;
+		border-radius: 3px;
+	}
+	&::-webkit-scrollbar-thumb {
+		background: #c1c1c1;
+		border-radius: 3px;
+		&:hover {
+			background: #a1a1a1;
+		}
+	}
 }
 
 input {
@@ -107,7 +124,8 @@ input {
 	overflow: hidden;
 	width: 768px;
 	max-width: 100%;
-	min-height: 480px;
+	min-height: 650px; /* Augmenté de 480px à 650px */
+	max-height: 90vh; /* Limite la hauteur à 90% de la fenêtre */
     display: block; /* Ensure block layout */
 }
 
@@ -221,21 +239,6 @@ input {
 	transform: translateX(20%);
 }
 
-.social-container {
-	margin: 20px 0;
-}
-
-.social-container a {
-	border: 1px solid #DDDDDD;
-	border-radius: 50%;
-	display: inline-flex;
-	justify-content: center;
-	align-items: center;
-	margin: 0 5px;
-	height: 40px;
-	width: 40px;
-}
-
 .mobile-only {
     display: none;
 }
@@ -245,6 +248,7 @@ input {
     .container {
         width: 100vw;
         min-height: 100vh;
+        max-height: 100vh; /* Utilise toute la hauteur sur mobile */
         border-radius: 0;
         box-shadow: none;
         display: flex;
@@ -256,10 +260,12 @@ input {
         width: 100%;
         height: 100%;
         transition: none;
+        overflow-y: auto; /* Permet le scroll sur mobile */
     }
     
     .sign-in-container, .sign-up-container {
         width: 100%;
+        height: 100%;
     }
 
     /* Hide overlay on mobile for simplicity, 
@@ -274,6 +280,35 @@ input {
         background-color: #333;
         border-color: #333;
         margin-top: 20px;
+    }
+
+    /* Mobile form adjustments */
+    form {
+        padding: 15px 30px; /* Réduit le padding sur mobile */
+        justify-content: flex-start;
+        
+        .profile-picture-preview {
+            width: 80px; /* Plus petit sur mobile */
+            height: 80px;
+        }
+        
+        input {
+            margin: 5px 0;
+            padding: 8px 12px;
+        }
+        
+        h1 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .profile-picture-section {
+            margin-bottom: 10px;
+            
+            small {
+                font-size: 10px;
+            }
+        }
     }
     
     /* Logic to show/hide based on class */
@@ -326,4 +361,140 @@ button {
   display: inline-flex;
   justify-content: center;
   align-items: center;
+}
+/* Profile Picture Upload Styles */
+.profile-picture-section {
+    margin-bottom: 15px; /* Réduit de 20px à 15px */
+    text-align: center;
+    
+    label {
+        display: block;
+        font-size: 13px; /* Réduit de 14px à 13px */
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px; /* Réduit de 10px à 8px */
+    }
+    
+    small {
+        display: block;
+        font-size: 11px; /* Réduit de 12px à 11px */
+        color: #666;
+        margin-top: 6px; /* Réduit de 8px à 6px */
+        font-style: italic;
+        line-height: 1.3;
+    }
+}
+
+.profile-picture-upload {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px; /* Réduit de 10px à 8px */
+}
+
+.profile-picture-preview {
+    width: 100px; /* Réduit de 120px à 100px */
+    height: 100px; /* Réduit de 120px à 100px */
+    border: 2px dashed #ddd; /* Réduit de 3px à 2px */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    background: #f9f9f9;
+    
+    &:hover {
+        border-color: #FF416C;
+        background: #fff;
+    }
+    
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+    
+    .placeholder {
+        text-align: center;
+        color: #999;
+        
+        span {
+            font-size: 24px; /* Réduit de 32px à 24px */
+            display: block;
+            margin-bottom: 4px; /* Réduit de 8px à 4px */
+        }
+        
+        p {
+            font-size: 10px; /* Réduit de 12px à 10px */
+            margin: 0;
+            line-height: 1.2;
+        }
+    }
+}
+
+.remove-picture {
+    background: #ff4757;
+    color: white;
+    border: none;
+    padding: 4px 8px; /* Réduit de 6px 12px à 4px 8px */
+    border-radius: 15px; /* Réduit de 20px à 15px */
+    font-size: 10px; /* Réduit de 12px à 10px */
+    cursor: pointer;
+    transition: background 0.2s ease;
+    
+    &:hover {
+        background: #ff3742;
+    }
+}
+
+.upload-progress {
+    margin: 10px 0; /* Réduit de 15px à 10px */
+    text-align: center;
+    
+    .progress-bar {
+        width: 100%;
+        height: 4px; /* Réduit de 6px à 4px */
+        background: #eee;
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 4px; /* Réduit de 5px à 4px */
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FF416C, #FF4B2B);
+            transition: width 0.3s ease;
+        }
+    }
+    
+    span {
+        font-size: 10px; /* Réduit de 12px à 10px */
+        color: #666;
+        font-weight: 600;
+    }
+}
+
+/* Form adjustments for profile picture */
+.form-container form {
+    .profile-picture-section + input {
+        margin-top: 8px; /* Réduit de 10px à 8px */
+    }
+    
+    /* Réduire l'espacement des inputs dans le formulaire d'inscription */
+    input {
+        margin: 6px 0; /* Réduit de 8px à 6px */
+        padding: 10px 15px; /* Réduit de 12px à 10px */
+    }
+    
+    h1 {
+        margin-bottom: 15px; /* Réduit l'espace sous le titre */
+        font-size: 24px; /* Optionnel: réduire la taille du titre */
+    }
+    
+    button {
+        margin-top: 15px; /* Réduit l'espace au-dessus du bouton */
+        padding: 10px 35px; /* Réduit le padding du bouton */
+    }
 }

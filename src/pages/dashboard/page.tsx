@@ -1892,7 +1892,15 @@ export default function DashboardPage() {
                                                         borderColor: p.gender === 'F' ? '#FF69B4' : p.gender === 'M' ? '#4A90E2' : '#D4AF37'
                                                     }}>
                                                         <div className="avatar-wrapper">
-                                                            <img src={`https://ui-avatars.com/api/?name=${p.firstName}+${p.lastName}&background=random&size=128`} alt="Av" />
+                                                            <img 
+                                                                src={p.profilePictureUrl || `https://ui-avatars.com/api/?name=${p.firstName}+${p.lastName}&background=random&size=128`} 
+                                                                alt={`${p.firstName} ${p.lastName}`}
+                                                                onError={(e) => {
+                                                                    // Fallback si l'image ne charge pas
+                                                                    const target = e.currentTarget as HTMLImageElement;
+                                                                    target.src = `https://ui-avatars.com/api/?name=${p.firstName}+${p.lastName}&background=random&size=128`;
+                                                                }}
+                                                            />
                                                             <div className={`gender-badge ${p.gender === 'M' ? 'male' : p.gender === 'F' ? 'female' : 'other'}`}>
                                                                 {p.gender === 'M' ? '♂' : p.gender === 'F' ? '♀' : '?'}
                                                             </div>

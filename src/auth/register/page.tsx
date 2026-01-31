@@ -1,18 +1,70 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { authService } from '../../services/auth.service';
+import { profileService } from '../../services/profile.service';
 
 export default function RegisterPage({onSwitch}: {onSwitch: () => void}) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleProfilePictureSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    const file = files[0];
+    
+    try {
+      // Validation via le service
+      if (!file.type.startsWith('image/')) {
+        alert("Seules les images sont autorisées pour la photo de profil.");
+        return;
+      }
+      
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        alert("La photo de profil ne peut pas dépasser 5MB.");
+        return;
+      }
+      
+      setProfilePicture(file);
+      
+      // Créer un aperçu
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfilePicturePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Erreur lors de la sélection de la photo');
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      alert('Tous les champs sont requis');
+      return;
+    }
+    
     setIsLoading(true);
+    
     try {
-      await authService.register({ name, email, password });
+      // Générer l'URL de la photo de profil
+      const profilePictureUrl = await profileService.generateProfilePictureUrl(name, profilePicture || undefined);
+      
+      await authService.register({ 
+        name, 
+        email, 
+        password, 
+        profilePictureUrl 
+      });
+      
       alert('Inscription réussie ! Vous pouvez maintenant vous connecter.');
       setIsLoading(false);
       onSwitch(); // Switch to login view
@@ -27,33 +79,75 @@ export default function RegisterPage({onSwitch}: {onSwitch: () => void}) {
     <div className="form-container sign-up-container">
       <form onSubmit={handleRegister}>
         <h1>Créer un compte</h1>
-        <div className="social-container">
-            <a href="#" className="social"><i className="fab fa-facebook-f"></i></a>
-            <a href="#" className="social"><i className="fab fa-google-plus-g"></i></a>
-            <a href="#" className="social"><i className="fab fa-linkedin-in"></i></a>
+        
+        {/* Photo de profil */}
+        <div className="profile-picture-section">
+          <label>Photo de profil</label>
+          <div className="profile-picture-upload">
+            <input 
+              ref={fileInputRef}
+              type="file" 
+              accept="image/*"
+              onChange={handleProfilePictureSelect}
+              style={{ display: 'none' }}
+            />
+            <div 
+              className="profile-picture-preview"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {profilePicturePreview ? (
+                <img src={profilePicturePreview} alt="Aperçu" />
+              ) : (
+                <div className="placeholder">
+                  <span>📷</span>
+                  <p>Cliquez pour ajouter une photo</p>
+                </div>
+              )}
+            </div>
+            {profilePicture && (
+              <button 
+                type="button" 
+                className="remove-picture"
+                onClick={() => {
+                  setProfilePicture(null);
+                  setProfilePicturePreview('');
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                  }
+                }}
+              >
+                ✕ Supprimer
+              </button>
+            )}
+          </div>
+          <small>Optionnel - Un avatar sera généré automatiquement si aucune photo n'est fournie</small>
         </div>
-        <span>ou utilisez votre email pour l'inscription</span>
+
         <input 
           type="text" 
-          placeholder="Nom"
+          placeholder="Nom complet *"
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={isLoading}
+          required
         />
         <input 
           type="email" 
-          placeholder="Email" 
+          placeholder="Email *" 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isLoading}
+          required
         />
         <input 
           type="password" 
-          placeholder="Mot de passe" 
+          placeholder="Mot de passe *" 
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={isLoading}
+          required
         />
+        
         <button type="submit" disabled={isLoading}>
             {isLoading ? <><span className="loader"></span> Inscription...</> : 'S\'inscrire'}
         </button>

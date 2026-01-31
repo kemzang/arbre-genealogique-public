@@ -5,6 +5,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   name?: string;
+  profilePictureUrl: string; // Requis - Photo obligatoire pour l'affichage dans l'arbre
 }
 
 export interface LoginRequest {
