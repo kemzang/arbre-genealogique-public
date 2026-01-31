@@ -14,7 +14,11 @@ import {
   Flower,
   MessageCircle,
   UserPlus,
-  UserMinus
+  UserMinus,
+  Calendar,
+  MapPin,
+  Edit,
+  Trash2
 } from 'lucide-react';
 import './dashboard.scss';
 import { authService, type User } from '../../services/auth.service';
@@ -23,6 +27,7 @@ import { treeService, type Person, type Relationship, type TreeData } from '../.
 import { chatService, type Message, type ChatRoom, type CreateRoomRequest } from '../../services/chat.service';
 import { memberService, type MemberStatus } from '../../services/member.service';
 import { mediaService, type MediaItem } from '../../services/media.service';
+import { eventService, type FamilyEvent, type CreateEventRequest } from '../../services/event.service';
 
 /**
  * Construit l'URL complète d'un média
@@ -51,7 +56,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [currentFamily, setCurrentFamily] = useState<MemberStatus | null>(null);
-  const [activeTab, setActiveTab] = useState<'TREE' | 'CHAT'>('TREE');
+  const [activeTab, setActiveTab] = useState<'TREE' | 'CHAT' | 'EVENTS'>('TREE');
   const [treeData, setTreeData] = useState<TreeData | null>(null);
   
   // Chat & Media State
@@ -110,6 +115,18 @@ export default function DashboardPage() {
   // Logout Confirmation State
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  // Events State
+  const [familyEvents, setFamilyEvents] = useState<FamilyEvent[]>([]);
+  const [showCreateEventModal, setShowCreateEventModal] = useState(false);
+  const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null); // FamilyEventWithMedia
+  const [newEvent, setNewEvent] = useState<CreateEventRequest>({
+    familyId: 0,
+    title: '',
+    eventDate: '',
+    location: ''
+  });
+
   // Load User & Family Status
   useEffect(() => {
     const u = authService.getCurrentUser();
@@ -154,6 +171,10 @@ export default function DashboardPage() {
             mediaService.getRecentMedia(active.familyId)
               .then(media => setMediaList(media))
               .catch(() => setMediaList([]));
+            
+            eventService.getFamilyEvents(active.familyId)
+              .then(events => setFamilyEvents(events))
+              .catch(() => setFamilyEvents([]));
           }
         }
       })
@@ -480,6 +501,59 @@ export default function DashboardPage() {
     setShowLogoutModal(false);
   };
 
+  // --- Event Management Handlers ---
+
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentFamily || !newEvent.title.trim()) return;
+
+    try {
+      const eventData = {
+        ...newEvent,
+        familyId: currentFamily.familyId
+      };
+      
+      const createdEvent = await eventService.createEvent(eventData);
+      setFamilyEvents([...familyEvents, createdEvent]);
+      setShowCreateEventModal(false);
+      setNewEvent({
+        familyId: 0,
+        title: '',
+        eventDate: '',
+        location: ''
+      });
+      alert("Événement créé avec succès !");
+    } catch (err) {
+      console.error("Error creating event", err);
+      alert("Erreur lors de la création de l'événement");
+    }
+  };
+
+  const handleViewEventDetails = async (event: FamilyEvent) => {
+    try {
+      const eventDetails = await eventService.getEventDetails(event.id);
+      setSelectedEvent(eventDetails);
+      setShowEventDetailsModal(true);
+    } catch (err) {
+      console.error("Error loading event details", err);
+      alert("Erreur lors du chargement des détails");
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: number) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet événement ?")) return;
+    
+    try {
+      await eventService.deleteEvent(eventId);
+      setFamilyEvents(familyEvents.filter(e => e.id !== eventId));
+      setShowEventDetailsModal(false);
+      alert("Événement supprimé !");
+    } catch (err) {
+      console.error("Error deleting event", err);
+      alert("Erreur lors de la suppression");
+    }
+  };
+
   /**
    * Gère la sélection de fichiers (stockage local, pas d'upload immédiat)
    */
@@ -519,7 +593,8 @@ export default function DashboardPage() {
               const media = await mediaService.uploadFile(
                   file,
                   currentFamily.familyId,
-                  undefined,
+                  undefined, // personId
+                  undefined, // eventId
                   (progress: number) => {
                       // Progression globale : (fichiers complétés + progression actuelle) / total
                       const globalProgress = Math.round(((i * 100) + progress) / pendingFiles.length);
@@ -577,6 +652,185 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-container">
+      {/* Create Event Modal */}
+      {showCreateEventModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <button className="close-btn" onClick={() => setShowCreateEventModal(false)}><X size={24}/></button>
+            <h2>Créer un événement</h2>
+            <form onSubmit={handleCreateEvent} className="event-form">
+              <div className="form-group">
+                <label>Titre de l'événement</label>
+                <input 
+                  type="text" 
+                  required 
+                  value={newEvent.title} 
+                  onChange={(e) => setNewEvent({...newEvent, title: e.target.value})} 
+                  placeholder="Ex: Réunion de famille, Anniversaire..."
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Date (optionnel)</label>
+                  <input 
+                    type="date" 
+                    value={newEvent.eventDate} 
+                    onChange={(e) => setNewEvent({...newEvent, eventDate: e.target.value})} 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Lieu (optionnel)</label>
+                  <input 
+                    type="text" 
+                    value={newEvent.location} 
+                    onChange={(e) => setNewEvent({...newEvent, location: e.target.value})} 
+                    placeholder="Ex: Marseille, Chez Mamie..."
+                  />
+                </div>
+              </div>
+              <button type="submit" className="primary-btn" style={{width: '100%', marginTop: '1rem'}}>
+                <Calendar size={20} style={{marginRight: 8}} />
+                Créer l'événement
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Event Details Modal */}
+      {showEventDetailsModal && selectedEvent && (
+        <div className="modal-overlay">
+          <div className="modal-content event-details-modal">
+            <button className="close-btn" onClick={() => setShowEventDetailsModal(false)}><X size={24}/></button>
+            
+            <div className="event-header">
+              <div className="event-icon">
+                <Calendar size={48} color="#326C58" />
+              </div>
+              <div className="event-info">
+                <h2>{selectedEvent.title}</h2>
+                {selectedEvent.eventDate && (
+                  <div className="event-date">
+                    <Calendar size={16} />
+                    <span>{new Date(selectedEvent.eventDate).toLocaleDateString('fr-FR', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}</span>
+                  </div>
+                )}
+                {selectedEvent.location && (
+                  <div className="event-location">
+                    <MapPin size={16} />
+                    <span>{selectedEvent.location}</span>
+                  </div>
+                )}
+              </div>
+              <div className="event-actions">
+                <button 
+                  className="icon-btn edit-btn" 
+                  title="Modifier"
+                  onClick={() => {
+                    // TODO: Implémenter la modification
+                    alert("Modification à implémenter");
+                  }}
+                >
+                  <Edit size={20} />
+                </button>
+                <button 
+                  className="icon-btn delete-btn" 
+                  title="Supprimer"
+                  onClick={() => handleDeleteEvent(selectedEvent.id)}
+                >
+                  <Trash2 size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="event-media">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3>Photos et vidéos ({selectedEvent._count?.media || 0})</h3>
+                <button
+                  className="primary-btn"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*,video/*';
+                    input.multiple = true;
+                    input.onchange = async (e) => {
+                      const files = (e.target as HTMLInputElement).files;
+                      if (files && currentFamily) {
+                        for (let i = 0; i < files.length; i++) {
+                          try {
+                            await mediaService.uploadFile(files[i], currentFamily.familyId, undefined, selectedEvent.id);
+                          } catch (err) {
+                            console.error('Upload error:', err);
+                          }
+                        }
+                        // Recharger les détails de l'événement
+                        handleViewEventDetails(selectedEvent);
+                        alert(`${files.length} fichier(s) uploadé(s) !`);
+                      }
+                    };
+                    input.click();
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, #326C58 0%, #4A9B7F 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <PlusCircle size={16} />
+                  Ajouter des médias
+                </button>
+              </div>
+              {selectedEvent.media && selectedEvent.media.length > 0 ? (
+                <div className="media-grid">
+                  {selectedEvent.media.map((media: any) => (
+                    <div key={media.id} className="media-item">
+                      {media.mediaType === 'IMAGE' ? (
+                        <img 
+                          src={getMediaUrl(media.urlPath)} 
+                          alt="Event media" 
+                          onClick={() => window.open(getMediaUrl(media.urlPath), '_blank')}
+                        />
+                      ) : media.mediaType === 'VIDEO' ? (
+                        <video 
+                          src={getMediaUrl(media.urlPath)} 
+                          controls 
+                          style={{width: '100%', height: '100%', objectFit: 'cover'}}
+                        />
+                      ) : (
+                        <div className="file-item">
+                          <span>📄 Fichier</span>
+                          <a href={getMediaUrl(media.urlPath)} target="_blank" rel="noopener noreferrer">
+                            Télécharger
+                          </a>
+                        </div>
+                      )}
+                      <div className="media-uploader">
+                        Par {media.uploader.displayName}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-media">Aucun média pour cet événement</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Search Modal */}
       {showJoinModal && (
         <div className="modal-overlay">
@@ -996,6 +1250,9 @@ export default function DashboardPage() {
                 </button>
                 <button className={`btn-nav ${activeTab === 'CHAT' ? 'active' : ''}`} onClick={() => setActiveTab('CHAT')}>
                     <MessageCircle size={16} style={{marginRight: 8, verticalAlign: 'middle'}}/> Chat & Médias
+                </button>
+                <button className={`btn-nav ${activeTab === 'EVENTS' ? 'active' : ''}`} onClick={() => setActiveTab('EVENTS')}>
+                    <Calendar size={16} style={{marginRight: 8, verticalAlign: 'middle'}}/> Événements
                 </button>
               </>
             )}
@@ -1696,6 +1953,122 @@ export default function DashboardPage() {
                 </div>
             </div>
         )}
+                {activeTab === 'EVENTS' && (
+                    <div className="events-interface">
+                        <div className="events-header">
+                            <div className="events-title">
+                                <Calendar size={32} color="#326C58" />
+                                <div>
+                                    <h2>Événements familiaux</h2>
+                                    <p>Organisez et partagez vos moments importants</p>
+                                </div>
+                            </div>
+                            <button 
+                                className="primary-btn"
+                                onClick={() => setShowCreateEventModal(true)}
+                                style={{
+                                    background: 'linear-gradient(135deg, #326C58 0%, #4A9B7F 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: '12px',
+                                    fontSize: '14px',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    transition: 'all 0.3s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(50, 108, 88, 0.3)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                }}
+                            >
+                                <PlusCircle size={20} />
+                                Nouvel événement
+                            </button>
+                        </div>
+
+                        <div className="events-grid">
+                            {familyEvents.length > 0 ? familyEvents.map(event => (
+                                <div 
+                                    key={event.id} 
+                                    className="event-card"
+                                    onClick={() => handleViewEventDetails(event)}
+                                >
+                                    <div className="event-card-header">
+                                        <div className="event-icon">
+                                            <Calendar size={24} color="#326C58" />
+                                        </div>
+                                        <div className="event-media-count">
+                                            {event._count?.media || 0} <Image size={16} />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="event-card-content">
+                                        <h3>{event.title}</h3>
+                                        
+                                        {event.eventDate && (
+                                            <div className="event-date">
+                                                <Calendar size={14} />
+                                                <span>{new Date(event.eventDate).toLocaleDateString('fr-FR', {
+                                                    day: 'numeric',
+                                                    month: 'long',
+                                                    year: 'numeric'
+                                                })}</span>
+                                            </div>
+                                        )}
+                                        
+                                        {event.location && (
+                                            <div className="event-location">
+                                                <MapPin size={14} />
+                                                <span>{event.location}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="event-card-footer">
+                                        <span className="event-created">
+                                            Créé le {new Date(event.createdAt).toLocaleDateString('fr-FR')}
+                                        </span>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="empty-events">
+                                    <Calendar size={64} color="#ccc" />
+                                    <h3>Aucun événement</h3>
+                                    <p>Créez votre premier événement familial pour commencer à organiser vos moments importants.</p>
+                                    <button 
+                                        className="primary-btn"
+                                        onClick={() => setShowCreateEventModal(true)}
+                                        style={{
+                                            background: 'linear-gradient(135deg, #326C58 0%, #4A9B7F 100%)',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '15px 30px',
+                                            borderRadius: '12px',
+                                            fontSize: '16px',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '10px',
+                                            marginTop: '20px'
+                                        }}
+                                    >
+                                        <PlusCircle size={20} />
+                                        Créer mon premier événement
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </>
         )}
       </main>

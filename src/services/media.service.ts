@@ -56,6 +56,7 @@ export const mediaService = {
    * @param file - Le fichier à uploader
    * @param familyId - L'ID de la famille
    * @param personId - (Optionnel) L'ID de la personne associée
+   * @param eventId - (Optionnel) L'ID de l'événement associé
    * @param onProgress - (Optionnel) Callback pour suivre la progression
    * @returns Le média créé
    */
@@ -63,6 +64,7 @@ export const mediaService = {
     file: File, 
     familyId: number, 
     personId?: number,
+    eventId?: number,
     onProgress?: (progress: number) => void
   ): Promise<MediaItem> {
     // Détection automatique du type de média
@@ -75,6 +77,9 @@ export const mediaService = {
     formData.append('mediaType', mediaType);
     if (personId) {
       formData.append('personId', personId.toString());
+    }
+    if (eventId) {
+      formData.append('eventId', eventId.toString());
     }
 
     // Configuration pour suivre la progression
