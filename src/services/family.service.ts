@@ -3,15 +3,16 @@ import api from './api';
 export interface Family {
   id: number;
   familyName: string;
+  logoUrl?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
   isMember?: boolean;
 }
 
 export interface JoinFamilyRequest {
   familyId: number;
   gender: 'M' | 'F' | 'O';
-  relatedToPersonId?: number; // Optional if joining as first member/admin, but usually required for join
+  relatedToPersonId?: number;
   relationshipType?: 'PARENTAL' | 'UNION' | 'SIBLING';
 }
 
@@ -21,6 +22,11 @@ export interface PendingMember {
   userId: number;
   userEmail: string;
   joinedAt: string;
+  applicationData: {
+    gender: 'M' | 'F' | 'O';
+    relatedToPersonId?: number;
+    relationshipType?: 'PARENTAL' | 'UNION' | 'SIBLING';
+  };
 }
 
 export const familyService = {
@@ -36,13 +42,13 @@ export const familyService = {
     return response.data;
   },
 
-  // Rechercher une famille
+  // Rechercher une famille - NOUVEAU ENDPOINT
   async searchFamilies(name: string): Promise<Family[]> {
     const response = await api.get<Family[]>(`/family/search?name=${encodeURIComponent(name)}`);
     return response.data;
   },
 
-  // Obtenir les membres en attente
+  // Obtenir les demandes d'adhésion en attente - NOUVEAU ENDPOINT
   async getPendingMembers(): Promise<PendingMember[]> {
     const response = await api.get<PendingMember[]>('/family/pending-members');
     return response.data;

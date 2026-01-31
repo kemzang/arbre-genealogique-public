@@ -1404,3 +1404,318 @@
         transform: scale(1.1);
     }
 }
+/* Interface simple et belle pour l'arbre généalogique */
+.simple-tree-view {
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    min-height: 500px;
+
+    .tree-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+
+        h3 {
+            color: white;
+            font-size: 24px;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .add-person-btn {
+            background: #D4AF37;
+            color: black;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+
+            &:hover {
+                background: #c19b26;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            }
+        }
+    }
+
+    .persons-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 10px;
+
+        /* Scrollbar styling */
+        &::-webkit-scrollbar {
+            width: 8px;
+        }
+        &::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        &::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            &:hover {
+                background: rgba(255, 255, 255, 0.5);
+            }
+        }
+    }
+
+    .person-card-container {
+        .person-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            border-left: 5px solid #326C58;
+
+            &:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+            }
+
+            &.m {
+                border-left-color: #3498db;
+            }
+
+            &.f {
+                border-left-color: #e74c3c;
+            }
+
+            &.o {
+                border-left-color: #9b59b6;
+            }
+
+            .person-header {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                margin-bottom: 15px;
+
+                .avatar {
+                    position: relative;
+                    width: 60px;
+                    height: 60px;
+
+                    img {
+                        width: 100%;
+                        height: 100%;
+                        border-radius: 50%;
+                        object-fit: cover;
+                        border: 3px solid #f0f0f0;
+                    }
+
+                    .avatar-initials {
+                        width: 100%;
+                        height: 100%;
+                        border-radius: 50%;
+                        background: linear-gradient(135deg, #326C58, #2a5a49);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 20px;
+                        font-weight: bold;
+                        color: white;
+                        border: 3px solid #f0f0f0;
+                    }
+
+                    .gender-badge {
+                        position: absolute;
+                        bottom: -5px;
+                        right: -5px;
+                        width: 24px;
+                        height: 24px;
+                        background: white;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 14px;
+                        font-weight: bold;
+                        color: #2c3e50;
+                        border: 2px solid #f0f0f0;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    }
+                }
+
+                .person-info {
+                    flex: 1;
+
+                    h4 {
+                        margin: 0 0 5px 0;
+                        font-size: 18px;
+                        color: #2c3e50;
+                        font-weight: bold;
+                    }
+
+                    .birth-date, .death-date {
+                        margin: 2px 0;
+                        font-size: 12px;
+                        color: #666;
+                    }
+
+                    .death-date {
+                        color: #e74c3c;
+                        font-weight: bold;
+                    }
+                }
+            }
+
+            .relations {
+                margin-bottom: 15px;
+
+                .relation {
+                    margin-bottom: 8px;
+                    padding: 8px 12px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    border-left: 3px solid #326C58;
+
+                    &.spouse {
+                        border-left-color: #e74c3c;
+                        background: #fdf2f2;
+                    }
+
+                    &.parents {
+                        border-left-color: #3498db;
+                        background: #f2f8fd;
+                    }
+
+                    &.children {
+                        border-left-color: #f39c12;
+                        background: #fdf8f2;
+                    }
+
+                    .relation-label {
+                        font-size: 12px;
+                        font-weight: bold;
+                        color: #666;
+                        display: block;
+                        margin-bottom: 4px;
+                    }
+
+                    .relation-name {
+                        font-size: 14px;
+                        color: #2c3e50;
+                        font-weight: 500;
+                    }
+
+                    .relation-list {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 8px;
+
+                        .relation-name {
+                            background: white;
+                            padding: 4px 8px;
+                            border-radius: 4px;
+                            font-size: 12px;
+                            border: 1px solid #e0e0e0;
+                        }
+                    }
+                }
+            }
+
+            .quick-actions {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+
+                .action-btn {
+                    padding: 6px 12px;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    flex: 1;
+                    min-width: 80px;
+
+                    &.child {
+                        background: #f39c12;
+                        color: white;
+                        &:hover { background: #e67e22; }
+                    }
+
+                    &.spouse {
+                        background: #e74c3c;
+                        color: white;
+                        &:hover { background: #c0392b; }
+                    }
+
+                    &.parent {
+                        background: #3498db;
+                        color: white;
+                        &:hover { background: #2980b9; }
+                    }
+
+                    &:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+                    }
+                }
+            }
+        }
+    }
+}
+
+.empty-tree-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    text-align: center;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 40px;
+
+    h3 {
+        margin: 20px 0 10px 0;
+        font-size: 28px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    p {
+        margin-bottom: 30px;
+        font-size: 16px;
+        opacity: 0.9;
+        max-width: 400px;
+        line-height: 1.5;
+    }
+
+    .start-tree-btn {
+        background: #D4AF37;
+        color: black;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+
+        &:hover {
+            background: #c19b26;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+    }
+}
