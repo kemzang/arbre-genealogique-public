@@ -107,6 +107,9 @@ export default function DashboardPage() {
   const [relatedPersonId, setRelatedPersonId] = useState<number | null>(null);
   const [relationshipType, setRelationshipType] = useState<'PARENTAL' | 'CHILD' | 'SPOUSE' | 'SIBLING'>('CHILD');
 
+  // Logout Confirmation State
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
   // Load User & Family Status
   useEffect(() => {
     const u = authService.getCurrentUser();
@@ -465,8 +468,16 @@ export default function DashboardPage() {
   };
 
   const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
     authService.logout();
     navigate('/');
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   /**
@@ -692,6 +703,34 @@ export default function DashboardPage() {
                     <button type="submit" style={{marginTop: '1rem', width: '100%'}}>Ajouter & Lier</button>
                 </form>
             </div>
+        </div>
+      )}
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="modal-overlay">
+          <div className="modal-content logout-modal">
+            <div className="logout-icon">
+              <LogOut size={48} color="#e74c3c" />
+            </div>
+            <h2>Confirmer la déconnexion</h2>
+            <p>Êtes-vous sûr de vouloir vous déconnecter ?</p>
+            <div className="logout-actions">
+              <button 
+                className="cancel-btn" 
+                onClick={cancelLogout}
+              >
+                Annuler
+              </button>
+              <button 
+                className="confirm-btn" 
+                onClick={confirmLogout}
+              >
+                <LogOut size={16} />
+                Se déconnecter
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1088,13 +1127,52 @@ export default function DashboardPage() {
 
                             return (
                                 <>
-                                    <div className="tree-controls" style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 100, display: 'flex', gap: '8px' }}>
+                                    <div className="tree-controls" style={{ position: 'absolute', top: '20px', left: '20px', zIndex: 100, display: 'flex', gap: '8px', alignItems: 'center' }}>
                                         <button onClick={() => setTreeZoom((z: number) => Math.max(0.2, z - 0.1))} title="Zoom -">-</button>
                                         <span style={{ background: '#326C58', padding: '4px 10px', borderRadius: '4px', fontSize: '0.8rem', minWidth: '40px', textAlign: 'center' }}>
                                             {Math.round(treeZoom * 100)}%
                                         </span>
                                         <button onClick={() => setTreeZoom((z: number) => Math.min(2, z + 0.1))} title="Zoom +">+</button>
                                         <button onClick={() => setTreeZoom(1)} title="Reset Zoom">⟲</button>
+                                        
+                                        {/* Bouton d'ajout visible dans les contrôles */}
+                                        <button 
+                                            onClick={() => { 
+                                                setRelatedPersonId(null); 
+                                                setRelationshipType('CHILD'); 
+                                                setShowAddPersonModal(true); 
+                                            }}
+                                            title="Ajouter une personne"
+                                            style={{
+                                                background: 'linear-gradient(135deg, #326C58 0%, #4A9B7F 100%)',
+                                                color: 'white',
+                                                border: '2px solid rgba(255,255,255,0.2)',
+                                                padding: '8px 16px',
+                                                borderRadius: '8px',
+                                                fontSize: '0.8rem',
+                                                fontWeight: '700',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                transition: 'all 0.2s ease',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.5px'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'linear-gradient(135deg, #4A9B7F 0%, #5DB89E 100%)';
+                                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'linear-gradient(135deg, #326C58 0%, #4A9B7F 100%)';
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                e.currentTarget.style.boxShadow = 'none';
+                                            }}
+                                        >
+                                            <PlusCircle size={16} strokeWidth={2.5} />
+                                            <span>Ajouter</span>
+                                        </button>
                                     </div>
 
                                     <div className="zoom-container">
@@ -1244,8 +1322,18 @@ export default function DashboardPage() {
                                         </div>
                                     </div>
 
-                                    <button className="fab-add" onClick={() => { setRelatedPersonId(null); setRelationshipType('CHILD'); setShowAddPersonModal(true); }} title="Ajouter une personne">
-                                        <PlusCircle size={32} />
+                                    <button 
+                                        className="fab-add" 
+                                        onClick={() => { 
+                                            setRelatedPersonId(null); 
+                                            setRelationshipType('CHILD'); 
+                                            setShowAddPersonModal(true); 
+                                        }} 
+                                        title="Ajouter une personne à l'arbre"
+                                        aria-label="Ajouter une personne"
+                                    >
+                                        <PlusCircle size={20} strokeWidth={2.5} />
+                                        <span>Ajouter</span>
                                     </button>
                                 </>
                             );
@@ -1254,8 +1342,35 @@ export default function DashboardPage() {
                                 <Flower size={64} color="#D4AF37" style={{ marginBottom: '1.5rem', opacity: 0.8 }} />
                                 <h3>Votre lignée commence ici</h3>
                                 <p>Appuyez sur le bouton ci-dessous pour ajouter votre premier ancêtre.</p>
-                                <button className="primary-btn" onClick={() => setShowAddPersonModal(true)}>
-                                    <PlusCircle size={20} style={{ marginRight: 10 }} /> Commencer l'arbre
+                                <button 
+                                    className="primary-btn" 
+                                    onClick={() => setShowAddPersonModal(true)}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #D4AF37 0%, #F5D76E 100%)',
+                                        color: '#1a1a1d',
+                                        border: 'none',
+                                        padding: '15px 30px',
+                                        borderRadius: '12px',
+                                        fontSize: '1.1rem',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        transition: 'all 0.3s ease',
+                                        boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(212, 175, 55, 0.4)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3)';
+                                    }}
+                                >
+                                    <PlusCircle size={24} strokeWidth={2.5} /> 
+                                    Commencer l'arbre
                                 </button>
                             </div>
                         )}
