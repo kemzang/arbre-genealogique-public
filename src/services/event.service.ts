@@ -6,11 +6,16 @@ export interface FamilyEvent {
   title: string;
   eventDate?: string;
   location?: string;
+  visibility: 'PUBLIC' | 'PRIVATE' | 'RESTRICTED';
   createdAt: string;
   updatedAt: string;
+  creator?: {
+    displayName: string;
+  };
   _count?: {
     media: number;
   };
+  guestPersonIds?: number[];
 }
 
 export interface FamilyEventWithMedia extends FamilyEvent {
@@ -29,12 +34,16 @@ export interface CreateEventRequest {
   title: string;
   eventDate?: string;
   location?: string;
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'RESTRICTED';
+  guestPersonIds?: number[];
 }
 
 export interface UpdateEventRequest {
   title?: string;
   eventDate?: string;
   location?: string;
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'RESTRICTED';
+  guestPersonIds?: number[];
 }
 
 class EventService {

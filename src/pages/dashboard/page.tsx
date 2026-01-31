@@ -18,7 +18,12 @@ import {
   Calendar,
   MapPin,
   Edit,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FileText,
+  UserCheck
 } from 'lucide-react';
 import './dashboard.scss';
 import { authService, type User } from '../../services/auth.service';
@@ -124,8 +129,16 @@ export default function DashboardPage() {
     familyId: 0,
     title: '',
     eventDate: '',
-    location: ''
+    location: '',
+    visibility: 'PUBLIC',
+    guestPersonIds: []
   });
+
+  // Media Viewer State
+  const [showMediaViewer, setShowMediaViewer] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<any>(null);
+  const [mediaViewerIndex, setMediaViewerIndex] = useState(0);
+  const [mediaViewerList, setMediaViewerList] = useState<any[]>([]);
 
   // Load User & Family Status
   useEffect(() => {
@@ -507,6 +520,12 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!currentFamily || !newEvent.title.trim()) return;
 
+    // Validation for restricted events
+    if (newEvent.visibility === 'RESTRICTED' && (!newEvent.guestPersonIds || newEvent.guestPersonIds.length === 0)) {
+      alert("Veuillez sélectionner au moins une personne pour un événement restreint");
+      return;
+    }
+
     try {
       const eventData = {
         ...newEvent,
@@ -520,7 +539,9 @@ export default function DashboardPage() {
         familyId: 0,
         title: '',
         eventDate: '',
-        location: ''
+        location: '',
+        visibility: 'PUBLIC',
+        guestPersonIds: []
       });
       alert("Événement créé avec succès !");
     } catch (err) {
@@ -552,6 +573,31 @@ export default function DashboardPage() {
       console.error("Error deleting event", err);
       alert("Erreur lors de la suppression");
     }
+  };
+
+  // --- Media Viewer Handlers ---
+
+  const openMediaViewer = (media: any, mediaList: any[], index: number) => {
+    setSelectedMedia(media);
+    setMediaViewerList(mediaList);
+    setMediaViewerIndex(index);
+    setShowMediaViewer(true);
+  };
+
+  const closeMediaViewer = () => {
+    setShowMediaViewer(false);
+    setSelectedMedia(null);
+    setMediaViewerList([]);
+    setMediaViewerIndex(0);
+  };
+
+  const navigateMedia = (direction: 'prev' | 'next') => {
+    const newIndex = direction === 'prev' 
+      ? (mediaViewerIndex - 1 + mediaViewerList.length) % mediaViewerList.length
+      : (mediaViewerIndex + 1) % mediaViewerList.length;
+    
+    setMediaViewerIndex(newIndex);
+    setSelectedMedia(mediaViewerList[newIndex]);
   };
 
   /**
@@ -630,7 +676,9 @@ export default function DashboardPage() {
           });
           
           // 4. Rafraîchir la liste des médias
-          await loadMedia(currentFamily.familyId);
+          if (uploadedMedia.length > 0) {
+              await loadMedia(currentFamily.familyId);
+          }
           
       } catch (err) {
           console.error("Failed to send message", err);
@@ -652,6 +700,65 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-container">
+      {/* Media Viewer Modal */}
+      {showMediaViewer && selectedMedia && (
+        <div className="modal-overlay media-viewer-overlay" onClick={closeMediaViewer}>
+          <div className="media-viewer-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close-btn media-viewer-close" onClick={closeMediaViewer}>
+              <X size={24} />
+            </button>
+            
+            {mediaViewerList.length > 1 && (
+              <>
+                <button className="nav-btn prev-btn" onClick={() => navigateMedia('prev')}>
+                  <ChevronLeft size={32} />
+                </button>
+                <button className="nav-btn next-btn" onClick={() => navigateMedia('next')}>
+                  <ChevronRight size={32} />
+                </button>
+              </>
+            )}
+            
+            <div className="media-viewer-content">
+              {selectedMedia.mediaType === 'IMAGE' ? (
+                <img 
+                  src={getMediaUrl(selectedMedia.urlPath)} 
+                  alt="Media viewer"
+                  className="media-viewer-image"
+                />
+              ) : selectedMedia.mediaType === 'VIDEO' ? (
+                <video 
+                  src={getMediaUrl(selectedMedia.urlPath)} 
+                  controls 
+                  className="media-viewer-video"
+                  autoPlay
+                />
+              ) : (
+                <div className="media-viewer-file">
+                  <FileText size={64} color="#666" />
+                  <h3>{selectedMedia.originalName || 'Fichier'}</h3>
+                  <a 
+                    href={getMediaUrl(selectedMedia.urlPath)} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="download-btn"
+                  >
+                    <Download size={20} />
+                    Télécharger
+                  </a>
+                </div>
+              )}
+            </div>
+            
+            {mediaViewerList.length > 1 && (
+              <div className="media-viewer-counter">
+                {mediaViewerIndex + 1} / {mediaViewerList.length}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Create Event Modal */}
       {showCreateEventModal && (
         <div className="modal-overlay">
@@ -688,6 +795,72 @@ export default function DashboardPage() {
                   />
                 </div>
               </div>
+              
+              {/* Visibility Selection */}
+              <div className="form-group">
+                <label>Visibilité de l'événement</label>
+                <select 
+                  value={newEvent.visibility} 
+                  onChange={(e) => setNewEvent({...newEvent, visibility: e.target.value as 'PUBLIC' | 'PRIVATE' | 'RESTRICTED'})}
+                >
+                  <option value="PUBLIC">Public - Visible par toute la famille</option>
+                  <option value="PRIVATE">Privé - Visible seulement par moi</option>
+                  <option value="RESTRICTED">Restreint - Visible par des personnes sélectionnées</option>
+                </select>
+              </div>
+
+              {/* Guest Person Selection for RESTRICTED events */}
+              {newEvent.visibility === 'RESTRICTED' && treeData?.persons && treeData.persons.length > 0 && (
+                <div className="form-group">
+                  <label>Personnes autorisées à voir cet événement</label>
+                  <div className="guest-selection" style={{
+                    maxHeight: '150px',
+                    overflowY: 'auto',
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    padding: '10px',
+                    background: '#f9f9f9'
+                  }}>
+                    {treeData.persons.map((person: Person) => (
+                      <label key={person.id} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '5px 0',
+                        cursor: 'pointer'
+                      }}>
+                        <input 
+                          type="checkbox"
+                          checked={newEvent.guestPersonIds?.includes(person.id) || false}
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            const currentGuests = newEvent.guestPersonIds || [];
+                            
+                            if (isChecked) {
+                              setNewEvent({
+                                ...newEvent,
+                                guestPersonIds: [...currentGuests, person.id]
+                              });
+                            } else {
+                              setNewEvent({
+                                ...newEvent,
+                                guestPersonIds: currentGuests.filter(id => id !== person.id)
+                              });
+                            }
+                          }}
+                        />
+                        <span>{person.firstName} {person.lastName}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {(!newEvent.guestPersonIds || newEvent.guestPersonIds.length === 0) && (
+                    <small style={{color: '#666', fontSize: '0.85rem', marginTop: '5px', display: 'block'}}>
+                      Sélectionnez au moins une personne pour un événement restreint
+                    </small>
+                  )}
+                </div>
+              )}
+
               <button type="submit" className="primary-btn" style={{width: '100%', marginTop: '1rem'}}>
                 <Calendar size={20} style={{marginRight: 8}} />
                 Créer l'événement
@@ -724,6 +897,83 @@ export default function DashboardPage() {
                   <div className="event-location">
                     <MapPin size={16} />
                     <span>{selectedEvent.location}</span>
+                  </div>
+                )}
+                
+                {/* Visibility and Creator Info */}
+                <div className="event-meta" style={{
+                  display: 'flex',
+                  gap: '15px',
+                  marginTop: '10px',
+                  fontSize: '0.9rem',
+                  color: '#666'
+                }}>
+                  <div className="event-visibility" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '4px 8px',
+                    borderRadius: '12px',
+                    background: selectedEvent.visibility === 'PUBLIC' ? '#e8f5e8' : 
+                               selectedEvent.visibility === 'PRIVATE' ? '#fff3cd' : '#f8d7da',
+                    color: selectedEvent.visibility === 'PUBLIC' ? '#155724' : 
+                           selectedEvent.visibility === 'PRIVATE' ? '#856404' : '#721c24'
+                  }}>
+                    {selectedEvent.visibility === 'PUBLIC' ? (
+                      <>
+                        <Globe size={14} />
+                        <span>Public</span>
+                      </>
+                    ) : selectedEvent.visibility === 'PRIVATE' ? (
+                      <>
+                        <Lock size={14} />
+                        <span>Privé</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck size={14} />
+                        <span>Restreint</span>
+                      </>
+                    )}
+                  </div>
+                  
+                  {selectedEvent.creator && (
+                    <div className="event-creator" style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}>
+                      <span>Créé par {selectedEvent.creator.displayName}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Guest List for RESTRICTED events */}
+                {selectedEvent.visibility === 'RESTRICTED' && selectedEvent.guestPersonIds && selectedEvent.guestPersonIds.length > 0 && (
+                  <div className="event-guests" style={{
+                    marginTop: '10px',
+                    padding: '10px',
+                    background: '#f8f9fa',
+                    borderRadius: '8px',
+                    border: '1px solid #e9ecef'
+                  }}>
+                    <div style={{
+                      fontSize: '0.85rem',
+                      fontWeight: '600',
+                      color: '#495057',
+                      marginBottom: '5px'
+                    }}>
+                      Personnes autorisées :
+                    </div>
+                    <div style={{
+                      fontSize: '0.8rem',
+                      color: '#6c757d'
+                    }}>
+                      {selectedEvent.guestPersonIds.map((personId: number) => {
+                        const person = treeData?.persons.find((p: Person) => p.id === personId);
+                        return person ? `${person.firstName} ${person.lastName}` : `Personne #${personId}`;
+                      }).join(', ')}
+                    </div>
                   </div>
                 )}
               </div>
@@ -795,24 +1045,36 @@ export default function DashboardPage() {
               </div>
               {selectedEvent.media && selectedEvent.media.length > 0 ? (
                 <div className="media-grid">
-                  {selectedEvent.media.map((media: any) => (
+                  {selectedEvent.media.map((media: any, index: number) => (
                     <div key={media.id} className="media-item">
                       {media.mediaType === 'IMAGE' ? (
                         <img 
                           src={getMediaUrl(media.urlPath)} 
                           alt="Event media" 
-                          onClick={() => window.open(getMediaUrl(media.urlPath), '_blank')}
+                          onClick={() => openMediaViewer(media, selectedEvent.media, index)}
+                          className="clickable-media"
                         />
                       ) : media.mediaType === 'VIDEO' ? (
-                        <video 
-                          src={getMediaUrl(media.urlPath)} 
-                          controls 
-                          style={{width: '100%', height: '100%', objectFit: 'cover'}}
-                        />
+                        <div className="video-thumbnail" onClick={() => openMediaViewer(media, selectedEvent.media, index)}>
+                          <video 
+                            src={getMediaUrl(media.urlPath)} 
+                            style={{width: '100%', height: '100%', objectFit: 'cover'}}
+                          />
+                          <div className="video-overlay">
+                            <div className="play-button">▶</div>
+                          </div>
+                        </div>
                       ) : (
                         <div className="file-item">
-                          <span>📄 Fichier</span>
-                          <a href={getMediaUrl(media.urlPath)} target="_blank" rel="noopener noreferrer">
+                          <FileText size={32} color="#666" />
+                          <span className="file-name">Fichier</span>
+                          <a 
+                            href={getMediaUrl(media.urlPath)} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="file-download-btn"
+                          >
+                            <Download size={16} />
                             Télécharger
                           </a>
                         </div>
@@ -1805,20 +2067,44 @@ export default function DashboardPage() {
                             </div>
                         ) : (
                             messages.map(msg => (
-                                <div key={msg.id} className={`msg ${msg.sender.id === user?.id ? 'sent' : 'received'}`}>
-                                    <span className="sender">{msg.sender.displayName}</span>
+                                <div key={msg.id} className={`msg ${msg.sender?.id === user?.id ? 'sent' : 'received'}`}>
+                                    <span className="sender">{msg.sender?.displayName || 'Utilisateur'}</span>
                                     {msg.content && <p className="content">{msg.content}</p>}
                                     
                                     {msg.attachments && msg.attachments.length > 0 && (
                                         <div className="msg-attachments">
-                                            {msg.attachments.map(att => (
+                                            {msg.attachments.map((att, index) => (
                                                 <div key={att.id} className="attachment">
                                                     {att.mediaType === 'IMAGE' ? (
-                                                        <img src={getMediaUrl(att.urlPath)} alt="attachment" onClick={() => window.open(getMediaUrl(att.urlPath), '_blank')} />
+                                                        <img 
+                                                            src={getMediaUrl(att.urlPath)} 
+                                                            alt="attachment" 
+                                                            onClick={() => openMediaViewer(att, msg.attachments!, index)}
+                                                            className="attachment-image"
+                                                        />
                                                     ) : att.mediaType === 'VIDEO' ? (
-                                                        <video src={getMediaUrl(att.urlPath)} controls style={{maxWidth: '200px'}} />
+                                                        <div className="attachment-video" onClick={() => openMediaViewer(att, msg.attachments!, index)}>
+                                                            <video src={getMediaUrl(att.urlPath)} style={{maxWidth: '200px', cursor: 'pointer'}} />
+                                                            <div className="video-overlay">
+                                                                <div className="play-button">▶</div>
+                                                            </div>
+                                                        </div>
                                                     ) : (
-                                                        <a href={getMediaUrl(att.urlPath)} target="_blank" rel="noopener noreferrer">📄 Fichier joint</a>
+                                                        <div className="attachment-file">
+                                                            <FileText size={24} color="#666" />
+                                                            <div className="file-info">
+                                                                <span className="file-name">Fichier joint</span>
+                                                                <a 
+                                                                    href={getMediaUrl(att.urlPath)} 
+                                                                    target="_blank" 
+                                                                    rel="noopener noreferrer"
+                                                                    className="file-download"
+                                                                >
+                                                                    <Download size={16} />
+                                                                    Télécharger
+                                                                </a>
+                                                            </div>
+                                                        </div>
                                                     )}
                                                 </div>
                                             ))}
@@ -2004,6 +2290,19 @@ export default function DashboardPage() {
                                     <div className="event-card-header">
                                         <div className="event-icon">
                                             <Calendar size={24} color="#326C58" />
+                                        </div>
+                                        <div className="event-visibility-badge" style={{
+                                          padding: '2px 6px',
+                                          borderRadius: '8px',
+                                          fontSize: '0.7rem',
+                                          fontWeight: '600',
+                                          background: event.visibility === 'PUBLIC' ? '#e8f5e8' : 
+                                                     event.visibility === 'PRIVATE' ? '#fff3cd' : '#f8d7da',
+                                          color: event.visibility === 'PUBLIC' ? '#155724' : 
+                                                 event.visibility === 'PRIVATE' ? '#856404' : '#721c24'
+                                        }}>
+                                          {event.visibility === 'PUBLIC' ? 'PUBLIC' : 
+                                           event.visibility === 'PRIVATE' ? 'PRIVÉ' : 'RESTREINT'}
                                         </div>
                                         <div className="event-media-count">
                                             {event._count?.media || 0} <Image size={16} />
