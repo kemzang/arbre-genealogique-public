@@ -1395,48 +1395,151 @@ export default function DashboardPage() {
                                     loadMessages(room.id);
                                 }}
                             >
-                                {room.channelType === 'PRIVATE' ? <Lock size={12} style={{marginRight:5}}/> : <Globe size={12} style={{marginRight:5}}/>}
-                                {room.name}
+                                <div className="room-avatar">
+                                    {room.avatarUrl ? (
+                                        <img 
+                                            src={getMediaUrl(room.avatarUrl)} 
+                                            alt={`Avatar ${room.name}`}
+                                            onError={(e) => {
+                                                // Si l'image ne charge pas, afficher l'avatar par défaut
+                                                const target = e.currentTarget as HTMLImageElement;
+                                                target.style.display = 'none';
+                                                const defaultAvatar = target.nextElementSibling as HTMLElement;
+                                                if (defaultAvatar) {
+                                                    defaultAvatar.style.display = 'flex';
+                                                }
+                                            }}
+                                        />
+                                    ) : null}
+                                    <div 
+                                        className="room-avatar-default"
+                                        style={{
+                                            display: room.avatarUrl ? 'none' : 'flex'
+                                        }}
+                                    >
+                                        {room.name.charAt(0).toUpperCase()}
+                                    </div>
+                                </div>
+                                <div className="room-info">
+                                    <div className="room-name">
+                                        {room.channelType === 'PRIVATE' ? <Lock size={12} style={{marginRight:5}}/> : <Globe size={12} style={{marginRight:5}}/>}
+                                        {room.name}
+                                    </div>
+                                    {room.description && (
+                                        <div className="room-description">
+                                            {room.description}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )) : (
-                            <div className="room-item">Aucun salon</div>
+                            <div className="room-item no-rooms">Aucun salon</div>
                         )}
                     </div>
                 </div>
                 <div className="chat-area">
                     {/* Chat Header */}
-                    {activeRoomId && (
-                        <div className="chat-header" style={{
-                            padding: '10px 20px', 
-                            borderBottom: '1px solid #ddd', 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center',
-                            background: '#f9f9f9'
-                        }}>
-                            <div>
-                                <h3 style={{margin:0}}>
-                                    {chatRooms.find(r => r.id === activeRoomId)?.name}
-                                </h3>
-                                <small style={{color: '#666'}}>
-                                    {chatRooms.find(r => r.id === activeRoomId)?.description}
-                                </small>
+                    {activeRoomId && (() => {
+                        const currentRoom = chatRooms.find(r => r.id === activeRoomId);
+                        return (
+                            <div className="chat-header" style={{
+                                padding: '15px 20px', 
+                                borderBottom: '1px solid #ddd', 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                background: '#f9f9f9'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    {/* Avatar du salon dans l'en-tête */}
+                                    <div className="chat-header-avatar" style={{
+                                        width: '48px',
+                                        height: '48px',
+                                        position: 'relative',
+                                        flexShrink: 0
+                                    }}>
+                                        {currentRoom?.avatarUrl ? (
+                                            <img 
+                                                src={getMediaUrl(currentRoom.avatarUrl)} 
+                                                alt={`Avatar ${currentRoom.name}`}
+                                                style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    borderRadius: '50%',
+                                                    objectFit: 'cover',
+                                                    border: '3px solid #326C58',
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                                }}
+                                                onError={(e) => {
+                                                    const target = e.currentTarget as HTMLImageElement;
+                                                    target.style.display = 'none';
+                                                    const defaultAvatar = target.nextElementSibling as HTMLElement;
+                                                    if (defaultAvatar) {
+                                                        defaultAvatar.style.display = 'flex';
+                                                    }
+                                                }}
+                                            />
+                                        ) : null}
+                                        <div 
+                                            style={{
+                                                display: currentRoom?.avatarUrl ? 'none' : 'flex',
+                                                width: '100%',
+                                                height: '100%',
+                                                borderRadius: '50%',
+                                                background: 'linear-gradient(135deg, #326C58 0%, #4A9B7F 100%)',
+                                                color: 'white',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: '20px',
+                                                fontWeight: '900',
+                                                border: '3px solid #326C58',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                                textShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                                            }}
+                                        >
+                                            {currentRoom?.name.charAt(0).toUpperCase()}
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 style={{margin:0, color: '#326C58', fontSize: '18px', fontWeight: '700'}}>
+                                            {currentRoom?.channelType === 'PRIVATE' ? <Lock size={16} style={{marginRight:8, verticalAlign: 'middle'}}/> : <Globe size={16} style={{marginRight:8, verticalAlign: 'middle'}}/>}
+                                            {currentRoom?.name}
+                                        </h3>
+                                        {currentRoom?.description && (
+                                            <small style={{color: '#666', fontSize: '13px'}}>
+                                                {currentRoom.description}
+                                            </small>
+                                        )}
+                                    </div>
+                                </div>
+                                <button 
+                                    className="icon-btn" 
+                                    onClick={() => {
+                                        if(currentRoom) {
+                                            setEditingRoom(currentRoom);
+                                            setShowRoomSettingsModal(true);
+                                        }
+                                    }}
+                                    title="Paramètres du salon"
+                                    style={{
+                                        background: 'rgba(50, 108, 88, 0.1)',
+                                        borderRadius: '8px',
+                                        padding: '8px',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(50, 108, 88, 0.2)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'rgba(50, 108, 88, 0.1)';
+                                    }}
+                                >
+                                    <Settings size={20} color="#326C58"/>
+                                </button>
                             </div>
-                            <button 
-                                className="icon-btn" 
-                                onClick={() => {
-                                    const room = chatRooms.find(r => r.id === activeRoomId);
-                                    if(room) {
-                                        setEditingRoom(room);
-                                        setShowRoomSettingsModal(true);
-                                    }
-                                }}
-                                title="Paramètres du salon"
-                            >
-                                <Settings size={20}/>
-                            </button>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     <div className="messages">
                         {messages.length === 0 ? (
