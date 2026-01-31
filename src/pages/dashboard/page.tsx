@@ -126,12 +126,13 @@ export default function DashboardPage() {
   const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null); // FamilyEventWithMedia
   const [newEvent, setNewEvent] = useState<CreateEventRequest>({
-    familyId: 0,
+    familyIds: [],
     title: '',
     eventDate: '',
     location: '',
     visibility: 'PUBLIC',
-    guestPersonIds: []
+    guestPersonIds: [],
+    targetPersonId: undefined
   });
 
   // Media Viewer State
@@ -520,28 +521,35 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!currentFamily || !newEvent.title.trim()) return;
 
-    // Validation for restricted events
+    // Validation pour les événements restreints
     if (newEvent.visibility === 'RESTRICTED' && (!newEvent.guestPersonIds || newEvent.guestPersonIds.length === 0)) {
       alert("Veuillez sélectionner au moins une personne pour un événement restreint");
+      return;
+    }
+
+    // Validation pour les événements de lignée
+    if (newEvent.visibility === 'BRANCH' && !newEvent.targetPersonId) {
+      alert("Veuillez sélectionner une personne pour définir la lignée");
       return;
     }
 
     try {
       const eventData = {
         ...newEvent,
-        familyId: currentFamily.familyId
+        familyIds: [currentFamily.familyId] // Convertir en tableau
       };
       
       const createdEvent = await eventService.createEvent(eventData);
       setFamilyEvents([...familyEvents, createdEvent]);
       setShowCreateEventModal(false);
       setNewEvent({
-        familyId: 0,
+        familyIds: [],
         title: '',
         eventDate: '',
         location: '',
         visibility: 'PUBLIC',
-        guestPersonIds: []
+        guestPersonIds: [],
+        targetPersonId: undefined
       });
       alert("Événement créé avec succès !");
     } catch (err) {
@@ -801,13 +809,36 @@ export default function DashboardPage() {
                 <label>Visibilité de l'événement</label>
                 <select 
                   value={newEvent.visibility} 
-                  onChange={(e) => setNewEvent({...newEvent, visibility: e.target.value as 'PUBLIC' | 'PRIVATE' | 'RESTRICTED'})}
+                  onChange={(e) => setNewEvent({...newEvent, visibility: e.target.value as 'PUBLIC' | 'PRIVATE' | 'RESTRICTED' | 'BRANCH'})}
                 >
                   <option value="PUBLIC">Public - Visible par toute la famille</option>
                   <option value="PRIVATE">Privé - Visible seulement par moi</option>
                   <option value="RESTRICTED">Restreint - Visible par des personnes sélectionnées</option>
+                  <option value="BRANCH">Lignée - Visible par la lignée d'une personne</option>
                 </select>
               </div>
+
+              {/* Target Person Selection for BRANCH events */}
+              {newEvent.visibility === 'BRANCH' && treeData?.persons && treeData.persons.length > 0 && (
+                <div className="form-group">
+                  <label>Personne dont la lignée pourra voir cet événement</label>
+                  <select 
+                    value={newEvent.targetPersonId || ''} 
+                    onChange={(e) => setNewEvent({...newEvent, targetPersonId: e.target.value ? Number(e.target.value) : undefined})}
+                    required
+                  >
+                    <option value="">Sélectionner une personne...</option>
+                    {treeData.persons.map((person: Person) => (
+                      <option key={person.id} value={person.id}>
+                        {person.firstName} {person.lastName}
+                      </option>
+                    ))}
+                  </select>
+                  <small style={{color: '#666', fontSize: '0.85rem', marginTop: '5px', display: 'block'}}>
+                    Seuls les descendants et ascendants de cette personne pourront voir l'événement
+                  </small>
+                </div>
+              )}
 
               {/* Guest Person Selection for RESTRICTED events */}
               {newEvent.visibility === 'RESTRICTED' && treeData?.persons && treeData.persons.length > 0 && (
@@ -915,9 +946,11 @@ export default function DashboardPage() {
                     padding: '4px 8px',
                     borderRadius: '12px',
                     background: selectedEvent.visibility === 'PUBLIC' ? '#e8f5e8' : 
-                               selectedEvent.visibility === 'PRIVATE' ? '#fff3cd' : '#f8d7da',
+                               selectedEvent.visibility === 'PRIVATE' ? '#fff3cd' : 
+                               selectedEvent.visibility === 'BRANCH' ? '#e1f5fe' : '#f8d7da',
                     color: selectedEvent.visibility === 'PUBLIC' ? '#155724' : 
-                           selectedEvent.visibility === 'PRIVATE' ? '#856404' : '#721c24'
+                           selectedEvent.visibility === 'PRIVATE' ? '#856404' : 
+                           selectedEvent.visibility === 'BRANCH' ? '#01579b' : '#721c24'
                   }}>
                     {selectedEvent.visibility === 'PUBLIC' ? (
                       <>
@@ -928,6 +961,11 @@ export default function DashboardPage() {
                       <>
                         <Lock size={14} />
                         <span>Privé</span>
+                      </>
+                    ) : selectedEvent.visibility === 'BRANCH' ? (
+                      <>
+                        <Users size={14} />
+                        <span>Lignée</span>
                       </>
                     ) : (
                       <>
@@ -947,6 +985,42 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Target Person for BRANCH events */}
+                {selectedEvent.visibility === 'BRANCH' && selectedEvent.targetPersonId && (
+                  <div className="event-target-person" style={{
+                    marginTop: '10px',
+                    padding: '10px',
+                    background: '#e1f5fe',
+                    borderRadius: '8px',
+                    border: '1px solid #b3e5fc'
+                  }}>
+                    <div style={{
+                      fontSize: '0.85rem',
+                      fontWeight: '600',
+                      color: '#01579b',
+                      marginBottom: '5px'
+                    }}>
+                      Lignée de :
+                    </div>
+                    <div style={{
+                      fontSize: '0.9rem',
+                      color: '#0277bd'
+                    }}>
+                      {(() => {
+                        const targetPerson = treeData?.persons.find((p: Person) => p.id === selectedEvent.targetPersonId);
+                        return targetPerson ? `${targetPerson.firstName} ${targetPerson.lastName}` : `Personne #${selectedEvent.targetPersonId}`;
+                      })()}
+                    </div>
+                    <small style={{
+                      fontSize: '0.75rem',
+                      color: '#0288d1',
+                      fontStyle: 'italic'
+                    }}>
+                      Visible par tous les descendants et ascendants de cette personne
+                    </small>
+                  </div>
+                )}
 
                 {/* Guest List for RESTRICTED events */}
                 {selectedEvent.visibility === 'RESTRICTED' && selectedEvent.guestPersonIds && selectedEvent.guestPersonIds.length > 0 && (
@@ -2297,12 +2371,15 @@ export default function DashboardPage() {
                                           fontSize: '0.7rem',
                                           fontWeight: '600',
                                           background: event.visibility === 'PUBLIC' ? '#e8f5e8' : 
-                                                     event.visibility === 'PRIVATE' ? '#fff3cd' : '#f8d7da',
+                                                     event.visibility === 'PRIVATE' ? '#fff3cd' : 
+                                                     event.visibility === 'BRANCH' ? '#e1f5fe' : '#f8d7da',
                                           color: event.visibility === 'PUBLIC' ? '#155724' : 
-                                                 event.visibility === 'PRIVATE' ? '#856404' : '#721c24'
+                                                 event.visibility === 'PRIVATE' ? '#856404' : 
+                                                 event.visibility === 'BRANCH' ? '#01579b' : '#721c24'
                                         }}>
                                           {event.visibility === 'PUBLIC' ? 'PUBLIC' : 
-                                           event.visibility === 'PRIVATE' ? 'PRIVÉ' : 'RESTREINT'}
+                                           event.visibility === 'PRIVATE' ? 'PRIVÉ' : 
+                                           event.visibility === 'BRANCH' ? 'LIGNÉE' : 'RESTREINT'}
                                         </div>
                                         <div className="event-media-count">
                                             {event._count?.media || 0} <Image size={16} />

@@ -2,11 +2,12 @@ import api from './api';
 
 export interface FamilyEvent {
   id: number;
-  familyId: number;
+  familyIds: number[];
   title: string;
   eventDate?: string;
   location?: string;
-  visibility: 'PUBLIC' | 'PRIVATE' | 'RESTRICTED';
+  visibility: 'PUBLIC' | 'PRIVATE' | 'RESTRICTED' | 'BRANCH';
+  targetPersonId?: number; // Pour visibility BRANCH
   createdAt: string;
   updatedAt: string;
   creator?: {
@@ -30,19 +31,21 @@ export interface FamilyEventWithMedia extends FamilyEvent {
 }
 
 export interface CreateEventRequest {
-  familyId: number;
+  familyIds: number[];
   title: string;
   eventDate?: string;
   location?: string;
-  visibility?: 'PUBLIC' | 'PRIVATE' | 'RESTRICTED';
-  guestPersonIds?: number[];
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'RESTRICTED' | 'BRANCH';
+  targetPersonId?: number; // Requis si visibility est BRANCH
+  guestPersonIds?: number[]; // Requis si visibility est RESTRICTED
 }
 
 export interface UpdateEventRequest {
   title?: string;
   eventDate?: string;
   location?: string;
-  visibility?: 'PUBLIC' | 'PRIVATE' | 'RESTRICTED';
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'RESTRICTED' | 'BRANCH';
+  targetPersonId?: number;
   guestPersonIds?: number[];
 }
 

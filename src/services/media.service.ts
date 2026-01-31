@@ -52,7 +52,7 @@ export const mediaService = {
   },
 
   /**
-   * Upload un fichier avec détection automatique du type
+   * Upload un fichier avec détection automatique du type et choix de l'endpoint
    * @param file - Le fichier à uploader
    * @param familyId - L'ID de la famille
    * @param personId - (Optionnel) L'ID de la personne associée
@@ -69,6 +69,12 @@ export const mediaService = {
   ): Promise<MediaItem> {
     // Détection automatique du type de média
     const mediaType = detectMediaType(file.name);
+    
+    // Choix de l'endpoint selon la taille du fichier
+    const maxSizeForNormalUpload = 10 * 1024 * 1024; // 10MB
+    const endpoint = file.size > maxSizeForNormalUpload 
+      ? '/media/upload-large'  // > 10MB
+      : '/media/upload';       // ≤ 10MB
     
     // Création du FormData pour l'upload
     const formData = new FormData();
@@ -101,7 +107,7 @@ export const mediaService = {
       };
     }
 
-    const response = await api.post<MediaItem>('/media/upload-large', formData, config);
+    const response = await api.post<MediaItem>(endpoint, formData, config);
     return response.data;
   }
 };
