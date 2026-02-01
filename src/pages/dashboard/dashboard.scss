@@ -2803,3 +2803,281 @@
         margin-top: 3px;
     }
 }
+
+/* === FAMILY SELECTOR === */
+.family-selector-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.family-selector {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  
+  h1 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .family-role {
+    font-size: 0.75rem;
+    color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+  
+  .family-dropdown-icon {
+    position: absolute;
+    right: -25px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+  }
+}
+
+.family-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  min-width: 280px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+
+.family-option {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background-color: #f8f9fa;
+  }
+  
+  &.active {
+    background-color: #e8f5e8;
+    border-left: 4px solid #326C58;
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  .family-name {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+  }
+  
+  .family-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 0.75rem;
+    
+    .status {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      
+      &.active {
+        background: #d4edda;
+        color: #155724;
+      }
+      
+      &.pending {
+        background: #fff3cd;
+        color: #856404;
+      }
+    }
+    
+    .role {
+      color: #666;
+      font-weight: 500;
+    }
+  }
+}
+
+/* === FUSION INTERFACE === */
+.fusion-interface {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.fusion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.fusion-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  
+  h2 {
+    margin: 0 0 0.5rem 0;
+    color: #326C58;
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+  
+  p {
+    margin: 0;
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+}
+
+.fusion-content {
+  display: grid;
+  gap: 2rem;
+}
+
+.fusion-section {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  
+  h3 {
+    margin: 0 0 1rem 0;
+    color: #326C58;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+}
+
+.tree-info {
+  display: grid;
+  gap: 0.5rem;
+  
+  p {
+    margin: 0;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #326C58;
+    
+    strong {
+      color: #326C58;
+    }
+  }
+}
+
+.fusion-requests {
+  display: grid;
+  gap: 1rem;
+}
+
+.fusion-request-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fafafa;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  
+  .request-info {
+    flex: 1;
+    
+    h4 {
+      margin: 0 0 0.5rem 0;
+      color: #333;
+      font-size: 1rem;
+    }
+    
+    p {
+      margin: 0.25rem 0;
+      font-size: 0.9rem;
+      color: #666;
+      
+      strong {
+        color: #333;
+      }
+    }
+  }
+  
+  .request-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+}
+
+.fusion-confirm {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #e8f5e8;
+  border-radius: 8px;
+  border: 1px solid #c3e6c3;
+  
+  p {
+    margin: 0 0 1rem 0;
+    color: #155724;
+    font-weight: 500;
+  }
+}
+
+/* === SEARCH RESULTS UPDATES === */
+.search-results {
+  .result-item {
+    .btn-self {
+      background: #f8f9fa;
+      color: #666;
+      cursor: not-allowed;
+    }
+    
+    .btn-selected {
+      background: #326C58;
+      color: white;
+    }
+  }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .family-dropdown {
+    min-width: 250px;
+    left: -50px;
+  }
+  
+  .fusion-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .fusion-request-card {
+    flex-direction: column;
+    gap: 1rem;
+    
+    .request-actions {
+      align-self: stretch;
+      
+      button {
+        flex: 1;
+      }
+    }
+  }
+}

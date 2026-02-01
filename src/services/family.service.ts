@@ -29,6 +29,26 @@ export interface PendingMember {
   };
 }
 
+export interface FamilyMergeRequest {
+  id: number;
+  sourceFamilyId: number;
+  targetFamilyId: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createdAt: string;
+  sourceFamilyName?: string;
+  targetFamilyName?: string;
+}
+
+export interface FusionRequestData {
+  sourceFamilyId: number;
+  targetFamilyId: number;
+}
+
+export interface ValidateCrossRelationshipData {
+  requestId: number;
+  action: 'APPROVE' | 'REJECT';
+}
+
 export const familyService = {
   // Créer une nouvelle famille
   async createFamily(familyName: string): Promise<Family> {
@@ -42,15 +62,33 @@ export const familyService = {
     return response.data;
   },
 
-  // Rechercher une famille - NOUVEAU ENDPOINT
+  // Rechercher une famille
   async searchFamilies(name: string): Promise<Family[]> {
     const response = await api.get<Family[]>(`/family/search?name=${encodeURIComponent(name)}`);
     return response.data;
   },
 
-  // Obtenir les demandes d'adhésion en attente - NOUVEAU ENDPOINT
+  // Obtenir les demandes d'adhésion en attente
   async getPendingMembers(): Promise<PendingMember[]> {
     const response = await api.get<PendingMember[]>('/family/pending-members');
+    return response.data;
+  },
+
+  // 🚀 NOUVEAU : Initier une demande de fusion entre familles
+  async createFusionRequest(data: FusionRequestData): Promise<FamilyMergeRequest> {
+    const response = await api.post<FamilyMergeRequest>('/family/fusion-request', data);
+    return response.data;
+  },
+
+  // 🚀 NOUVEAU : Valider ou rejeter une demande de fusion
+  async validateCrossRelationship(data: ValidateCrossRelationshipData): Promise<{ success: boolean; connection?: any }> {
+    const response = await api.post('/family/validate-cross-relationship', data);
+    return response.data;
+  },
+
+  // 🚀 NOUVEAU : Obtenir les demandes de fusion en attente
+  async getPendingFusionRequests(): Promise<FamilyMergeRequest[]> {
+    const response = await api.get<FamilyMergeRequest[]>('/family/fusion-requests');
     return response.data;
   }
 };

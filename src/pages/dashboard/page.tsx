@@ -33,6 +33,7 @@ import { chatService, type Message, type ChatRoom, type CreateRoomRequest } from
 import { memberService, type MemberStatus } from '../../services/member.service';
 import { mediaService, type MediaItem } from '../../services/media.service';
 import { eventService, type FamilyEvent, type CreateEventRequest } from '../../services/event.service';
+import { multiFamilyService, type FamilyMergeRequest } from '../../services/multi-family.service';
 import { useSafeAsync } from '../../hooks/useSafeAsync';
 
 /**
@@ -62,9 +63,16 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { safeSetState, safeAsync } = useSafeAsync();
   const [user, setUser] = useState<User | null>(null);
+  const [userFamilies, setUserFamilies] = useState<MemberStatus[]>([]);
   const [currentFamily, setCurrentFamily] = useState<MemberStatus | null>(null);
-  const [activeTab, setActiveTab] = useState<'TREE' | 'CHAT' | 'EVENTS'>('TREE');
+  const [showFamilySelector, setShowFamilySelector] = useState(false);
+  const [activeTab, setActiveTab] = useState<'TREE' | 'CHAT' | 'EVENTS' | 'FUSION'>('TREE');
   const [treeData, setTreeData] = useState<TreeData | null>(null);
+  
+  // Multi-Family States
+  const [pendingFusionRequests, setPendingFusionRequests] = useState<FamilyMergeRequest[]>([]);
+  const [showFusionModal, setShowFusionModal] = useState(false);
+  const [fusionTargetFamilyId, setFusionTargetFamilyId] = useState<number | null>(null);
   
   // Chat & Media State
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
@@ -164,33 +172,11 @@ export default function DashboardPage() {
     memberService.getMemberStatus()
       .then(statuses => {
         if (Array.isArray(statuses)) {
+          setUserFamilies(statuses);
           const active = statuses.find(s => s.status === 'ACTIVE');
           if (active) {
             setCurrentFamily(active);
-            // Charger les données en arrière-plan
-            treeService.getTree(active.familyId)
-              .then(tree => setTreeData(tree))
-              .catch(() => setTreeData({ persons: [], relationships: [] }));
-            
-            chatService.getChatRooms(active.familyId)
-              .then(rooms => {
-                setChatRooms(rooms);
-                if (rooms.length > 0) {
-                  setActiveRoomId(rooms[0].id);
-                  chatService.getMessages(rooms[0].id)
-                    .then(msgs => setMessages(msgs))
-                    .catch(() => setMessages([]));
-                }
-              })
-              .catch(() => setChatRooms([]));
-            
-            mediaService.getRecentMedia(active.familyId)
-              .then(media => setMediaList(media))
-              .catch(() => setMediaList([]));
-            
-            eventService.getFamilyEvents(active.familyId)
-              .then(events => setFamilyEvents(events))
-              .catch(() => setFamilyEvents([]));
+            loadFamilyData(active.familyId);
           }
         }
       })
@@ -199,6 +185,104 @@ export default function DashboardPage() {
         console.log("Backend not accessible, using offline mode");
       });
   }, [navigate]);
+
+  // Fermer le sélecteur de famille quand on clique ailleurs
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showFamilySelector) {
+        const target = event.target as Element;
+        if (!target.closest('.family-selector-container')) {
+          setShowFamilySelector(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showFamilySelector]);
+
+  const loadFamilyData = async (familyId: number) => {
+    try {
+      // Charger l'arbre (maintenant multi-famille par défaut)
+      const tree = await treeService.getTree(familyId);
+      setTreeData(tree);
+      
+      // Charger les salons de chat
+      const rooms = await chatService.getChatRooms(familyId);
+      setChatRooms(rooms);
+      if (rooms.length > 0) {
+        setActiveRoomId(rooms[0].id);
+        const msgs = await chatService.getMessages(rooms[0].id);
+        setMessages(msgs);
+      }
+      
+      // Charger les médias
+      const media = await mediaService.getRecentMedia(familyId);
+      setMediaList(media);
+      
+      // Charger les événements
+      const events = await eventService.getFamilyEvents(familyId);
+      setFamilyEvents(events);
+      
+      // Charger les demandes de fusion en attente (pour les admins)
+      try {
+        // TODO: Implémenter l'endpoint spécifique pour les demandes de fusion
+        setPendingFusionRequests([]);
+      } catch (err) {
+        console.log("Fusion requests not available yet");
+        setPendingFusionRequests([]);
+      }
+      
+    } catch (err) {
+      console.error("Error loading family data:", err);
+    }
+  };
+
+  const handleFamilySwitch = async (familyStatus: MemberStatus) => {
+    setCurrentFamily(familyStatus);
+    setShowFamilySelector(false);
+    await loadFamilyData(familyStatus.familyId);
+  };
+
+  // --- Fusion Handlers ---
+
+  const handleCreateFusionRequest = async (targetFamilyId: number) => {
+    if (!currentFamily) return;
+    
+    try {
+      await multiFamilyService.requestFamilyFusion({
+        sourceFamilyId: currentFamily.familyId,
+        targetFamilyId
+      });
+      alert("Demande de fusion envoyée !");
+      setShowFusionModal(false);
+      setFusionTargetFamilyId(null);
+    } catch (err) {
+      console.error("Error creating fusion request:", err);
+      alert("Erreur lors de l'envoi de la demande");
+    }
+  };
+
+  const handleValidateFusionRequest = async (requestId: number, action: 'APPROVE' | 'REJECT') => {
+    try {
+      const result = await multiFamilyService.validateFusionRequest({ requestId, action });
+      
+      if (result.success) {
+        alert(action === 'APPROVE' ? "Fusion approuvée ! Les familles sont maintenant connectées." : "Demande rejetée.");
+        
+        // Recharger les données si approuvé
+        if (action === 'APPROVE' && currentFamily) {
+          await loadFamilyData(currentFamily.familyId);
+        }
+        
+        // Recharger les demandes de fusion
+        setPendingFusionRequests(prev => prev.filter(req => req.id !== requestId));
+      }
+    } catch (err) {
+      console.error("Error validating fusion request:", err);
+      alert("Erreur lors de la validation");
+    }
+  };
 
   // Refetch media when filter changes (only if family loaded)
   useEffect(() => {
@@ -1595,7 +1679,40 @@ export default function DashboardPage() {
       <header>
         <div className="brand">
             <Flower className="tree-icon" />
-            <h1>{currentFamily ? currentFamily.familyName.toUpperCase() : 'ARBRE GÉNÉALOGIQUE'}</h1>
+            <div className="family-selector-container">
+              {currentFamily ? (
+                <div className="family-selector" onClick={() => setShowFamilySelector(!showFamilySelector)}>
+                  <h1>{currentFamily.familyName.toUpperCase()}</h1>
+                  <div className="family-role">{currentFamily.role} • {currentFamily.status}</div>
+                  {userFamilies.length > 1 && (
+                    <div className="family-dropdown-icon">
+                      <ArrowRight size={16} style={{ transform: showFamilySelector ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <h1>ARBRE GÉNÉALOGIQUE</h1>
+              )}
+              
+              {/* Dropdown des familles */}
+              {showFamilySelector && userFamilies.length > 1 && (
+                <div className="family-dropdown">
+                  {userFamilies.map((family) => (
+                    <div 
+                      key={family.familyId}
+                      className={`family-option ${currentFamily?.familyId === family.familyId ? 'active' : ''}`}
+                      onClick={() => handleFamilySwitch(family)}
+                    >
+                      <div className="family-name">{family.familyName}</div>
+                      <div className="family-meta">
+                        <span className={`status ${family.status.toLowerCase()}`}>{family.status}</span>
+                        <span className="role">{family.role}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
         </div>
         <div className="user-controls">
             {currentFamily && (
@@ -1609,6 +1726,11 @@ export default function DashboardPage() {
                 <button className={`btn-nav ${activeTab === 'EVENTS' ? 'active' : ''}`} onClick={() => setActiveTab('EVENTS')}>
                     <Calendar size={16} style={{marginRight: 8, verticalAlign: 'middle'}}/> Événements
                 </button>
+                {currentFamily.role === 'ADMIN' && (
+                  <button className={`btn-nav ${activeTab === 'FUSION' ? 'active' : ''}`} onClick={() => setActiveTab('FUSION')}>
+                      <ArrowRight size={16} style={{marginRight: 8, verticalAlign: 'middle'}}/> Fusion
+                  </button>
+                )}
               </>
             )}
             <div className="profile">
@@ -2472,9 +2594,174 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 )}
+                {activeTab === 'FUSION' && currentFamily?.role === 'ADMIN' && (
+                    <div className="fusion-interface">
+                        <div className="fusion-header">
+                            <div className="fusion-title">
+                                <ArrowRight size={32} color="#326C58" />
+                                <div>
+                                    <h2>Fusion de Familles</h2>
+                                    <p>Connectez votre famille à d'autres familles pour créer des liens inter-familiaux</p>
+                                </div>
+                            </div>
+                            <button 
+                                className="primary-btn"
+                                onClick={() => setShowFusionModal(true)}
+                                style={{
+                                    background: 'linear-gradient(135deg, #326C58 0%, #4A9B7F 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    padding: '12px 24px',
+                                    borderRadius: '12px',
+                                    fontSize: '14px',
+                                    fontWeight: '700',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}
+                            >
+                                <PlusCircle size={20} />
+                                Demander une fusion
+                            </button>
+                        </div>
+
+                        <div className="fusion-content">
+                            <div className="fusion-section">
+                                <h3>Informations sur l'arbre multi-famille</h3>
+                                {treeData?.primaryFamilyId && (
+                                    <div className="tree-info">
+                                        <p><strong>Famille principale :</strong> {currentFamily.familyName}</p>
+                                        <p><strong>Familles connectées :</strong> {treeData.connectedFamiliesCount || 0}</p>
+                                        <p><strong>Total personnes :</strong> {treeData.persons.length}</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="fusion-section">
+                                <h3>Demandes de fusion en attente</h3>
+                                {pendingFusionRequests.length > 0 ? (
+                                    <div className="fusion-requests">
+                                        {pendingFusionRequests.map(request => (
+                                            <div key={request.id} className="fusion-request-card">
+                                                <div className="request-info">
+                                                    <h4>Demande de fusion</h4>
+                                                    <p><strong>De :</strong> {request.sourceFamilyName}</p>
+                                                    <p><strong>Vers :</strong> {request.targetFamilyName}</p>
+                                                    <p><strong>Statut :</strong> {request.status}</p>
+                                                    <p><strong>Date :</strong> {new Date(request.createdAt).toLocaleDateString('fr-FR')}</p>
+                                                </div>
+                                                {request.status === 'PENDING' && request.targetFamilyId === currentFamily.familyId && (
+                                                    <div className="request-actions">
+                                                        <button 
+                                                            className="approve-btn"
+                                                            onClick={() => handleValidateFusionRequest(request.id, 'APPROVE')}
+                                                            style={{
+                                                                background: '#28a745',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                padding: '8px 16px',
+                                                                borderRadius: '6px',
+                                                                marginRight: '8px'
+                                                            }}
+                                                        >
+                                                            Approuver
+                                                        </button>
+                                                        <button 
+                                                            className="reject-btn"
+                                                            onClick={() => handleValidateFusionRequest(request.id, 'REJECT')}
+                                                            style={{
+                                                                background: '#dc3545',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                padding: '8px 16px',
+                                                                borderRadius: '6px'
+                                                            }}
+                                                        >
+                                                            Rejeter
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p>Aucune demande de fusion en attente</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </>
         )}
       </main>
+
+      {/* Fusion Request Modal */}
+      {showFusionModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <button className="close-btn" onClick={() => setShowFusionModal(false)}><X size={24}/></button>
+            <h2>Demander une fusion de famille</h2>
+            <p>Recherchez une famille avec laquelle vous souhaitez créer une connexion pour permettre les relations inter-familiales.</p>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (fusionTargetFamilyId) {
+                handleCreateFusionRequest(fusionTargetFamilyId);
+              }
+            }} className="search-form">
+              <input 
+                type="text" 
+                placeholder="Rechercher une famille..." 
+                value={searchQuery}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+              />
+              <button type="button" onClick={handleSearchFamily}><Search size={18}/></button>
+            </form>
+
+            <div className="search-results">
+              {searchResults.map((fam: Family) => (
+                <div key={fam.id} className="result-item">
+                  <span>{fam.familyName}</span>
+                  {fam.id === currentFamily?.familyId ? (
+                    <button disabled className="btn-self">Votre famille</button>
+                  ) : (
+                    <button 
+                      onClick={() => setFusionTargetFamilyId(fam.id)}
+                      className={fusionTargetFamilyId === fam.id ? 'btn-selected' : ''}
+                    >
+                      {fusionTargetFamilyId === fam.id ? 'Sélectionnée' : 'Sélectionner'}
+                    </button>
+                  )}
+                </div>
+              ))}
+              {searchResults.length === 0 && searchQuery && <p>Aucun résultat trouvé.</p>}
+            </div>
+
+            {fusionTargetFamilyId && (
+              <div className="fusion-confirm">
+                <p><strong>Famille sélectionnée :</strong> {searchResults.find(f => f.id === fusionTargetFamilyId)?.familyName}</p>
+                <button 
+                  className="primary-btn"
+                  onClick={() => handleCreateFusionRequest(fusionTargetFamilyId)}
+                  style={{
+                    background: 'linear-gradient(135deg, #326C58 0%, #4A9B7F 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '12px 24px',
+                    borderRadius: '8px',
+                    width: '100%',
+                    marginTop: '1rem'
+                  }}
+                >
+                  Envoyer la demande de fusion
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

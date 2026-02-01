@@ -45,8 +45,31 @@ export interface CreateRelationshipRequest {
   isBiological: boolean;
 }
 
+export interface TreeData {
+  persons: Person[];
+  relationships: Relationship[];
+  primaryFamilyId?: number;
+  connectedFamiliesCount?: number;
+}
+
+export interface PersonDetails {
+  person: Person;
+  parents: Person[];
+  children: Person[];
+  spouses: Person[];
+  siblings: Person[];
+}
+
+export interface RelationshipDetails {
+  relationship: Relationship & {
+    personA: Person;
+    personB: Person;
+  };
+  children?: Person[];
+}
+
 export const treeService = {
-  // Récupérer l'arbre généalogique
+  // Récupérer l'arbre généalogique (maintenant multi-famille)
   async getTree(familyId?: number): Promise<TreeData> {
     const query = familyId ? `?familyId=${familyId}` : '';
     const response = await api.get<TreeData>(`/tree${query}`);
@@ -59,37 +82,25 @@ export const treeService = {
     return response.data;
   },
 
-  // Créer une relation
+  // Créer une relation (maintenant supporte inter-familles)
   async createRelationship(data: CreateRelationshipRequest): Promise<Relationship> {
     const response = await api.post<Relationship>('/relationship', data);
     return response.data;
   },
 
-  // NOUVEAU : Obtenir les détails d'une personne
-  async getPersonDetails(personId: number): Promise<{
-    person: Person;
-    parents: Person[];
-    children: Person[];
-    spouses: Person[];
-    siblings: Person[];
-  }> {
-    const response = await api.get(`/person/${personId}`);
+  // 🚀 NOUVEAU : Obtenir les détails complets d'une personne
+  async getPersonDetails(personId: number): Promise<PersonDetails> {
+    const response = await api.get<PersonDetails>(`/person/${personId}`);
     return response.data;
   },
 
-  // NOUVEAU : Obtenir les détails d'une relation
-  async getRelationshipDetails(relationshipId: number): Promise<{
-    relationship: Relationship & {
-      personA: Person;
-      personB: Person;
-    };
-    children?: Person[];
-  }> {
-    const response = await api.get(`/relationship/${relationshipId}`);
+  // 🚀 NOUVEAU : Obtenir les détails d'une relation avec enfants
+  async getRelationshipDetails(relationshipId: number): Promise<RelationshipDetails> {
+    const response = await api.get<RelationshipDetails>(`/relationship/${relationshipId}`);
     return response.data;
   },
 
-  // NOUVEAU : Modifier une relation
+  // Modifier une relation
   async updateRelationship(relationshipId: number, data: {
     type?: 'PARENTAL' | 'UNION' | 'SIBLING';
     isBiological?: boolean;
@@ -98,7 +109,7 @@ export const treeService = {
     return response.data;
   },
 
-  // NOUVEAU : Supprimer une relation
+  // Supprimer une relation
   async deleteRelationship(relationshipId: number): Promise<{ success: boolean }> {
     const response = await api.delete(`/relationship/${relationshipId}`);
     return response.data;
