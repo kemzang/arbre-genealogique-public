@@ -142,8 +142,8 @@ export default function FamilyTree({
                       {/* Personne principale */}
                       <div className={`person-card ${person.gender.toLowerCase()}`}>
                         <div className="person-avatar">
-                          {person.photoUrl ? (
-                            <img src={getMediaUrl(person.photoUrl)} alt={person.firstName} />
+                          {person.profilePictureUrl ? (
+                            <img src={getMediaUrl(person.profilePictureUrl)} alt={person.firstName} />
                           ) : (
                             <div className="avatar-initials">
                               {person.firstName[0]}{person.lastName[0]}
@@ -174,8 +174,8 @@ export default function FamilyTree({
                           <div className="marriage-link">💕</div>
                           <div className={`person-card ${spouse.gender.toLowerCase()}`}>
                             <div className="person-avatar">
-                              {spouse.photoUrl ? (
-                                <img src={getMediaUrl(spouse.photoUrl)} alt={spouse.firstName} />
+                              {spouse.profilePictureUrl ? (
+                                <img src={getMediaUrl(spouse.profilePictureUrl)} alt={spouse.firstName} />
                               ) : (
                                 <div className="avatar-initials">
                                   {spouse.firstName[0]}{spouse.lastName[0]}
