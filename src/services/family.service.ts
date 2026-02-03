@@ -33,15 +33,39 @@ export interface FamilyMergeRequest {
   id: number;
   sourceFamilyId: number;
   targetFamilyId: number;
+  requesterId: number;
+  sourcePersonId: number;
+  targetPersonId: number;
+  relationshipType: 'PARENTAL' | 'UNION' | 'SIBLING';
+  justification?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;
-  sourceFamilyName?: string;
-  targetFamilyName?: string;
+  sourceFamily?: {
+    familyName: string;
+  };
+  targetFamily?: {
+    familyName: string;
+  };
+  sourcePerson?: {
+    firstName: string;
+    lastName: string;
+  };
+  targetPerson?: {
+    firstName: string;
+    lastName: string;
+  };
+  requester?: {
+    displayName: string;
+  };
 }
 
 export interface FusionRequestData {
   sourceFamilyId: number;
   targetFamilyId: number;
+  sourcePersonId: number; // Personne de la famille source (requis)
+  targetPersonId: number; // Personne de la famille cible (requis)
+  relationshipType: 'PARENTAL' | 'UNION' | 'SIBLING'; // Requis
+  justification?: string; // Optionnel
 }
 
 export interface ValidateCrossRelationshipData {
@@ -81,7 +105,25 @@ export const familyService = {
   },
 
   // 🚀 NOUVEAU : Valider ou rejeter une demande de fusion
-  async validateCrossRelationship(data: ValidateCrossRelationshipData): Promise<{ success: boolean; connection?: any }> {
+  async validateCrossRelationship(data: ValidateCrossRelationshipData): Promise<{
+    updatedRequest: FamilyMergeRequest;
+    connection?: {
+      id: number;
+      familyAId: number;
+      familyBId: number;
+      createdAt: string;
+    };
+    relationship?: {
+      id: number;
+      personAId: number;
+      personBId: number;
+      type: 'PARENTAL' | 'UNION' | 'SIBLING';
+      status: 'ACTIVE' | 'ENDED' | 'DECEASED';
+      startDate: string;
+      isBiological: boolean;
+    };
+    message?: string;
+  }> {
     const response = await api.post('/family/validate-cross-relationship', data);
     return response.data;
   },

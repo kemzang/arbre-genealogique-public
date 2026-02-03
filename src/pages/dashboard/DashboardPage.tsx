@@ -24,10 +24,13 @@ import { EventsInterface } from '../../components/dashboard/EventsInterface';
 import { FusionInterface } from '../../components/dashboard/FusionInterface';
 import { MediaViewer } from '../../components/dashboard/MediaViewer';
 import { AddPersonModal } from '../../components/dashboard/AddPersonModal';
+import { PersonDetailModal } from '../../components/dashboard/PersonDetailModal';
+import { RelationshipDetailModal } from '../../components/dashboard/RelationshipDetailModal';
 
 // Services
 import { authService, type User } from '../../services/auth.service';
 import { familyService } from '../../services/family.service';
+import { treeService } from '../../services/tree.service';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -42,6 +45,10 @@ export default function DashboardPage() {
   
   // Media filter
   const [mediaFilter, setMediaFilter] = useState<'ALL' | 'IMAGE' | 'VIDEO' | 'FILE'>('ALL');
+
+  // Person and Relationship detail modals
+  const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
+  const [selectedRelationshipId, setSelectedRelationshipId] = useState<number | null>(null);
 
   // Custom hooks
   const familyData = useFamilyData();
@@ -213,6 +220,8 @@ export default function DashboardPage() {
                   treeZoom={treeManagement.treeZoom}
                   setTreeZoom={treeManagement.setTreeZoom}
                   onAddPerson={treeManagement.openAddPersonModal}
+                  onViewPerson={(personId) => setSelectedPersonId(personId)}
+                  onViewRelationship={(relationshipId) => setSelectedRelationshipId(relationshipId)}
                 />
               </div>
             )}
@@ -326,6 +335,36 @@ export default function DashboardPage() {
         setRelationshipType={treeManagement.setRelationshipType}
         onAddPerson={treeManagement.handleAddPerson}
       />
+
+      {/* Person Detail Modal */}
+      {selectedPersonId && familyData.currentFamily && (
+        <PersonDetailModal
+          personId={selectedPersonId}
+          familyId={familyData.currentFamily.familyId}
+          onClose={() => setSelectedPersonId(null)}
+          onUpdate={async () => {
+            if (familyData.currentFamily) {
+              const updatedTree = await treeService.getTree(familyData.currentFamily.familyId);
+              familyData.setTreeData?.(updatedTree);
+            }
+          }}
+          onViewRelationship={(relationshipId) => setSelectedRelationshipId(relationshipId)}
+        />
+      )}
+
+      {/* Relationship Detail Modal */}
+      {selectedRelationshipId && (
+        <RelationshipDetailModal
+          relationshipId={selectedRelationshipId}
+          onClose={() => setSelectedRelationshipId(null)}
+          onUpdate={async () => {
+            if (familyData.currentFamily) {
+              const updatedTree = await treeService.getTree(familyData.currentFamily.familyId);
+              familyData.setTreeData?.(updatedTree);
+            }
+          }}
+        />
+      )}
 
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (

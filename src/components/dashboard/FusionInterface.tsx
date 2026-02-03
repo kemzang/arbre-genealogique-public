@@ -17,7 +17,13 @@ interface FusionInterfaceProps {
   pendingFusionRequests: FamilyMergeRequest[];
   
   // Actions
-  onCreateFusionRequest: (targetFamilyId: number) => Promise<boolean>;
+  onCreateFusionRequest: (data: {
+    targetFamilyId: number;
+    sourcePersonId: number;
+    targetPersonId: number;
+    relationshipType: 'PARENTAL' | 'UNION' | 'SIBLING';
+    justification?: string;
+  }) => Promise<boolean>;
   onValidateFusionRequest: (requestId: number, action: 'APPROVE' | 'REJECT') => Promise<boolean>;
   onSearchFamilies: (query: string) => Promise<Family[]>;
 }
@@ -38,6 +44,10 @@ export const FusionInterface = memo(({
   const [searchResults, setSearchResults] = useState<Family[]>([]);
   const [fusionTargetFamilyId, setFusionTargetFamilyId] = useState<number | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [sourcePersonId, setSourcePersonId] = useState<number | null>(null);
+  const [targetPersonId, setTargetPersonId] = useState<number | null>(null);
+  const [relationshipType, setRelationshipType] = useState<'PARENTAL' | 'UNION' | 'SIBLING'>('UNION');
+  const [justification, setJustification] = useState('');
 
   const handleSearchFamily = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,15 +66,28 @@ export const FusionInterface = memo(({
   };
 
   const handleCreateFusionRequest = async () => {
-    if (!fusionTargetFamilyId) return;
+    if (!fusionTargetFamilyId || !sourcePersonId || !targetPersonId) {
+      alert("Veuillez remplir tous les champs obligatoires (famille cible, personne source, personne cible).");
+      return;
+    }
     
-    const success = await onCreateFusionRequest(fusionTargetFamilyId);
+    const success = await onCreateFusionRequest({
+      targetFamilyId: fusionTargetFamilyId,
+      sourcePersonId,
+      targetPersonId,
+      relationshipType,
+      justification: justification.trim() || undefined
+    });
     if (success) {
       alert("Demande de fusion envoyée !");
       setShowFusionModal(false);
       setSearchQuery('');
       setSearchResults([]);
       setFusionTargetFamilyId(null);
+      setSourcePersonId(null);
+      setTargetPersonId(null);
+      setRelationshipType('UNION');
+      setJustification('');
     } else {
       alert("Erreur lors de l'envoi de la demande");
     }
@@ -85,7 +108,7 @@ export const FusionInterface = memo(({
       {showFusionModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <button className="close-btn" onClick={() => setShowFusionModal(false)}>
+            <button className="close-btn" onClick={() => setShowFusionModal(false)} title="Fermer" aria-label="Fermer la fenêtre">
               <X size={24}/>
             </button>
             <h2>Demander une fusion de famille</h2>
@@ -98,7 +121,7 @@ export const FusionInterface = memo(({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <button type="submit" disabled={isSearching}>
+              <button type="submit" disabled={isSearching} title="Rechercher une famille" aria-label="Rechercher une famille">
                 <Search size={18}/>
               </button>
             </form>
@@ -131,19 +154,112 @@ export const FusionInterface = memo(({
             </div>
 
             {fusionTargetFamilyId && (
-              <div className="fusion-confirm">
-                <p><strong>Famille sélectionnée :</strong> {searchResults.find(f => f.id === fusionTargetFamilyId)?.familyName}</p>
+              <div className="fusion-confirm" style={{ marginTop: '1.5rem', padding: '1rem', background: '#f8f9fa', borderRadius: '8px' }}>
+                <p style={{ marginBottom: '1rem' }}><strong>Famille sélectionnée :</strong> {searchResults.find(f => f.id === fusionTargetFamilyId)?.familyName}</p>
+                
+                {/* Sélection de la personne source (famille actuelle) */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                    Personne de votre famille (source) *
+                  </label>
+                  <select
+                    value={sourcePersonId || ''}
+                    onChange={(e) => setSourcePersonId(Number(e.target.value) || null)}
+                    title="Sélectionner une personne de votre famille"
+                    aria-label="Sélectionner une personne de votre famille"
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '6px',
+                      border: '1px solid #ddd'
+                    }}
+                  >
+                    <option value="">Sélectionner une personne</option>
+                    {treeData?.persons.map((person) => (
+                      <option key={person.id} value={person.id}>
+                        {person.firstName} {person.lastName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Sélection de la personne cible (famille cible) */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                    ID de la personne dans la famille cible *
+                  </label>
+                  <input
+                    type="number"
+                    value={targetPersonId || ''}
+                    onChange={(e) => setTargetPersonId(Number(e.target.value) || null)}
+                    placeholder="Entrez l'ID de la personne"
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '6px',
+                      border: '1px solid #ddd'
+                    }}
+                  />
+                  <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+                    Vous devez connaître l'ID de la personne dans la famille cible. Contactez l'administrateur si nécessaire.
+                  </p>
+                </div>
+
+                {/* Sélection du type de relation */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                    Type de relation *
+                  </label>
+                  <select
+                    value={relationshipType}
+                    onChange={(e) => setRelationshipType(e.target.value as 'PARENTAL' | 'UNION' | 'SIBLING')}
+                    title="Sélectionner le type de relation"
+                    aria-label="Sélectionner le type de relation"
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '6px',
+                      border: '1px solid #ddd'
+                    }}
+                  >
+                    <option value="UNION">Union (Mariage, PACS, Concubinage)</option>
+                    <option value="PARENTAL">Parental (Parent-Enfant, Adoption)</option>
+                    <option value="SIBLING">Fratrie (Frère-Sœur)</option>
+                  </select>
+                </div>
+
+                {/* Justification */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                    Justification (optionnel)
+                  </label>
+                  <textarea
+                    value={justification}
+                    onChange={(e) => setJustification(e.target.value)}
+                    placeholder="Expliquez la raison de cette demande de fusion..."
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '6px',
+                      border: '1px solid #ddd',
+                      minHeight: '80px',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+
                 <button 
                   className="primary-btn"
                   onClick={handleCreateFusionRequest}
+                  disabled={!sourcePersonId || !targetPersonId}
                   style={{
-                    background: 'linear-gradient(135deg, #326C58 0%, #4A9B7F 100%)',
+                    background: (sourcePersonId && targetPersonId) ? 'linear-gradient(135deg, #326C58 0%, #4A9B7F 100%)' : '#ccc',
                     color: 'white',
                     border: 'none',
                     padding: '12px 24px',
                     borderRadius: '8px',
                     width: '100%',
-                    marginTop: '1rem'
+                    cursor: (sourcePersonId && targetPersonId) ? 'pointer' : 'not-allowed'
                   }}
                 >
                   Envoyer la demande de fusion
@@ -230,8 +346,22 @@ export const FusionInterface = memo(({
                 <div key={request.id} className="fusion-request-card">
                   <div className="request-info">
                     <h4>Demande de fusion</h4>
-                    <p><strong>De :</strong> {request.sourceFamilyName}</p>
-                    <p><strong>Vers :</strong> {request.targetFamilyName}</p>
+                    <p><strong>De :</strong> {request.sourceFamily?.familyName || request.sourceFamilyName}</p>
+                    <p><strong>Vers :</strong> {request.targetFamily?.familyName || request.targetFamilyName}</p>
+                    {request.sourcePerson && (
+                      <p><strong>Personne source :</strong> {request.sourcePerson.firstName} {request.sourcePerson.lastName}</p>
+                    )}
+                    {request.targetPerson && (
+                      <p><strong>Personne cible :</strong> {request.targetPerson.firstName} {request.targetPerson.lastName}</p>
+                    )}
+                    <p><strong>Type de relation :</strong> {
+                      request.relationshipType === 'UNION' ? 'Union (Mariage, PACS)' :
+                      request.relationshipType === 'PARENTAL' ? 'Parental' :
+                      'Fratrie'
+                    }</p>
+                    {request.justification && (
+                      <p><strong>Justification :</strong> {request.justification}</p>
+                    )}
                     <p><strong>Statut :</strong> 
                       <span style={{
                         marginLeft: '8px',

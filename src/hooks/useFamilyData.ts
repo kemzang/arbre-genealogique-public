@@ -93,13 +93,23 @@ export const useFamilyData = () => {
     }
   }, []);
 
-  const createFusionRequest = useCallback(async (targetFamilyId: number) => {
+  const createFusionRequest = useCallback(async (data: {
+    targetFamilyId: number;
+    sourcePersonId: number;
+    targetPersonId: number;
+    relationshipType: 'PARENTAL' | 'UNION' | 'SIBLING';
+    justification?: string;
+  }) => {
     if (!currentFamily) return false;
     
     try {
       await multiFamilyService.requestFamilyFusion({
         sourceFamilyId: currentFamily.familyId,
-        targetFamilyId
+        targetFamilyId: data.targetFamilyId,
+        sourcePersonId: data.sourcePersonId,
+        targetPersonId: data.targetPersonId,
+        relationshipType: data.relationshipType,
+        justification: data.justification
       });
       return true;
     } catch (err) {
@@ -108,7 +118,7 @@ export const useFamilyData = () => {
     }
   }, [currentFamily]);
 
-  const validateFusionRequest = useCallback(async (requestId: number, action: 'APPROVE' | 'REJECT') => {
+  const validateFusionRequest = useCallback(async (requestId: number, action: 'APPROVE' | 'REJECT'): Promise<boolean> => {
     try {
       const result = await multiFamilyService.validateFusionRequest({ requestId, action });
       
@@ -117,7 +127,7 @@ export const useFamilyData = () => {
       }
       
       setPendingFusionRequests(prev => prev.filter(req => req.id !== requestId));
-      return result.success;
+      return result.success ?? false;
     } catch (err) {
       console.error("Error validating fusion request:", err);
       return false;

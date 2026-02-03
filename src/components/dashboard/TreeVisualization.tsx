@@ -7,13 +7,17 @@ interface TreeVisualizationProps {
   treeZoom: number;
   setTreeZoom: (zoom: number) => void;
   onAddPerson: (personId?: number, relType?: 'PARENTAL' | 'CHILD' | 'SPOUSE' | 'SIBLING') => void;
+  onViewPerson?: (personId: number) => void;
+  onViewRelationship?: (relationshipId: number) => void;
 }
 
 export const TreeVisualization = memo(({
   treeData,
   treeZoom,
   setTreeZoom,
-  onAddPerson
+  onAddPerson,
+  onViewPerson,
+  onViewRelationship
 }: TreeVisualizationProps) => {
   if (!treeData?.persons || treeData.persons.length === 0) {
     return (
@@ -67,8 +71,71 @@ export const TreeVisualization = memo(({
 
   const unions = relationships.filter((r: Relationship) => r.type === 'UNION');
   const parentalRels = relationships.filter((r: Relationship) => r.type === 'PARENTAL');
-  const childrenIds = new Set(parentalRels.map((r: Relationship) => r.personBId));
-  const roots = persons.filter((p: Person) => !childrenIds.has(p.id));
+  
+  // Calculer les niveaux de génération en partant des personnes sans enfants (feuilles)
+  const personLevels = new Map<number, number>();
+  
+  // Fonction récursive pour calculer le niveau d'une personne
+  // Les personnes sans enfants sont au niveau 0 (feuilles)
+  // Les parents sont au niveau = max(niveau de leurs enfants) + 1
+  const calculateLevel = (personId: number, visited: Set<number> = new Set()): number => {
+    if (visited.has(personId)) {
+      // Cycle détecté, retourner 0 pour éviter la récursion infinie
+      return 0;
+    }
+    visited.add(personId);
+    
+    if (personLevels.has(personId)) {
+      return personLevels.get(personId)!;
+    }
+    
+    // Trouver les enfants de cette personne
+    const children = parentalRels
+      .filter((r: Relationship) => r.personAId === personId)
+      .map((r: Relationship) => r.personBId);
+    
+    // Si la personne n'a pas d'enfants, elle est une feuille (niveau 0)
+    if (children.length === 0) {
+      const level = 0;
+      personLevels.set(personId, level);
+      return level;
+    }
+    
+    // Le niveau d'un parent = niveau maximum de ses enfants + 1
+    const childrenLevels = children.map(childId => calculateLevel(childId, new Set(visited)));
+    const maxChildLevel = childrenLevels.length > 0 ? Math.max(...childrenLevels) : 0;
+    const parentLevel = maxChildLevel + 1;
+    
+    personLevels.set(personId, parentLevel);
+    return parentLevel;
+  };
+  
+  // Calculer les niveaux pour toutes les personnes
+  persons.forEach((p: Person) => {
+    if (!personLevels.has(p.id)) {
+      calculateLevel(p.id);
+    }
+  });
+  
+  // Ajuster les niveaux des conjoints pour qu'ils soient au même niveau
+  unions.forEach((union: Relationship) => {
+    const levelA = personLevels.get(union.personAId) || 0;
+    const levelB = personLevels.get(union.personBId) || 0;
+    const maxLevel = Math.max(levelA, levelB);
+    // Les deux conjoints doivent avoir le même niveau (le plus élevé)
+    personLevels.set(union.personAId, maxLevel);
+    personLevels.set(union.personBId, maxLevel);
+  });
+  
+  // Trouver le niveau maximum pour inverser (les parents en haut)
+  const maxLevel = Math.max(...Array.from(personLevels.values()), 0);
+  
+  // Inverser les niveaux : les parents (niveau élevé) doivent être en haut (y petit)
+  // Les enfants (niveau bas) doivent être en bas (y grand)
+  const normalizedLevels = new Map<number, number>();
+  personLevels.forEach((level, personId) => {
+    normalizedLevels.set(personId, maxLevel - level);
+  });
 
   const getChildrenOfUnion = (pA: number, pB: number | null) => {
     const cA = parentalRels.filter((r: Relationship) => r.personAId === pA).map((r: Relationship) => r.personBId);
@@ -77,10 +144,13 @@ export const TreeVisualization = memo(({
     return Array.from(new Set([...cA, ...cB]));
   };
 
-  const placeSubtree = (personId: number, startX: number, level: number): number => {
+  const placeSubtree = (personId: number, startX: number): number => {
     if (placed.has(personId)) return 0;
     
+    // Utiliser le niveau normalisé pour le positionnement Y
+    const level = normalizedLevels.get(personId) || 0;
     const y = level * levelGap;
+    
     const union = unions.find((u: Relationship) => u.personAId === personId || u.personBId === personId);
     const spouseId = union ? (union.personAId === personId ? union.personBId : union.personAId) : null;
     
@@ -88,7 +158,16 @@ export const TreeVisualization = memo(({
     const children = getChildrenOfUnion(personId, spouseId);
     
     placed.add(personId);
-    if (spouseId) placed.add(spouseId);
+    if (spouseId) {
+      placed.add(spouseId);
+      // Le conjoint doit être au même niveau
+      const spouseLevel = normalizedLevels.get(spouseId) || level;
+      const spouseY = spouseLevel * levelGap;
+      if (spouseY !== y) {
+        // Ajuster le niveau du conjoint pour qu'il soit au même niveau
+        normalizedLevels.set(spouseId, level);
+      }
+    }
 
     let childrenTreeWidth = 0;
     
@@ -109,7 +188,7 @@ export const TreeVisualization = memo(({
     if (children.length > 0) {
       let currentChildX = centerX - childrenTreeWidth / 2;
       children.forEach((childId: number) => {
-        placeSubtree(childId, currentChildX, level + 1);
+        placeSubtree(childId, currentChildX);
         currentChildX += 280 + siblingGap;
       });
     }
@@ -117,11 +196,29 @@ export const TreeVisualization = memo(({
     return subtreeWidth;
   };
 
-  let currentX = 0;
-  roots.forEach((root: Person) => {
-    if (!placed.has(root.id)) {
-      currentX += placeSubtree(root.id, currentX, 0) + 200;
+  // Grouper les personnes par niveau pour un meilleur positionnement
+  const personsByLevel = new Map<number, Person[]>();
+  normalizedLevels.forEach((level, personId) => {
+    const person = persons.find(p => p.id === personId);
+    if (person) {
+      if (!personsByLevel.has(level)) {
+        personsByLevel.set(level, []);
+      }
+      personsByLevel.get(level)!.push(person);
     }
+  });
+
+  // Placer les personnes niveau par niveau, en commençant par le niveau le plus haut (parents)
+  const sortedLevels = Array.from(personsByLevel.keys()).sort((a, b) => a - b);
+  let currentX = 0;
+  
+  sortedLevels.forEach(level => {
+    const levelPersons = personsByLevel.get(level)!;
+    levelPersons.forEach((person: Person) => {
+      if (!placed.has(person.id)) {
+        currentX += placeSubtree(person.id, currentX) + 200;
+      }
+    });
   });
 
   // Ensure ALL persons are placed
@@ -240,7 +337,19 @@ export const TreeVisualization = memo(({
               
               return (
                 <g key={`u-${u.id}`}>
-                  <line className="spouse-line" x1={x1} y1={y1} x2={x2} y2={y2} strokeDasharray="8,4" stroke="#D4AF37" strokeWidth="2" opacity="0.6" />
+                  <line 
+                    className="spouse-line" 
+                    x1={x1} 
+                    y1={y1} 
+                    x2={x2} 
+                    y2={y2} 
+                    strokeDasharray="8,4" 
+                    stroke="#D4AF37" 
+                    strokeWidth="2" 
+                    opacity="0.6"
+                    style={{ cursor: onViewRelationship ? 'pointer' : 'default' }}
+                    onClick={() => onViewRelationship && onViewRelationship(u.id)}
+                  />
                   {children.length > 0 && (
                     <>
                       <line x1={midX} y1={y1} x2={midX} y2={y1 + 60} stroke="#D4AF37" strokeWidth="2" opacity="0.8" />
@@ -248,13 +357,23 @@ export const TreeVisualization = memo(({
                         const pc = nodePositions.get(cid);
                         if (!pc) return null;
                         const cx = pc.x - minX + pad + nodeWidth/2;
-                        const cy = pc.y - minY + pad; 
+                        const cy = pc.y - minY + pad;
+                        // Trouver la relation parentale correspondante
+                        const parentRel = parentalRels.find((r: Relationship) => 
+                          (r.personAId === u.personAId || r.personAId === u.personBId) && r.personBId === cid
+                        );
                         return (
-                          <path 
-                            key={`u-c-${cid}`} 
-                            d={`M ${midX} ${y1 + 60} C ${midX} ${y1 + 130}, ${cx} ${cy - 80}, ${cx} ${cy}`} 
-                            fill="none" stroke="#D4AF37" strokeWidth="2" opacity="0.8" 
-                          />
+                          <g key={`u-c-${cid}`}>
+                            {parentRel && (
+                              <title>Cliquer pour voir/modifier la relation parentale</title>
+                            )}
+                            <path 
+                              d={`M ${midX} ${y1 + 60} C ${midX} ${y1 + 130}, ${cx} ${cy - 80}, ${cx} ${cy}`} 
+                              fill="none" stroke="#D4AF37" strokeWidth="2" opacity="0.8"
+                              style={{ cursor: (onViewRelationship && parentRel) ? 'pointer' : 'default' }}
+                              onClick={() => parentRel && onViewRelationship && onViewRelationship(parentRel.id)}
+                            />
+                          </g>
                         );
                       })}
                     </>
@@ -263,7 +382,7 @@ export const TreeVisualization = memo(({
               );
             })}
 
-            {/* Single parents */}
+            {/* Single parents - Relations parentales */}
             {persons.map((p: Person) => {
               const hasUnion = unions.some((u: Relationship) => u.personAId === p.id || u.personBId === p.id);
               if (hasUnion) return null;
@@ -282,11 +401,15 @@ export const TreeVisualization = memo(({
                 const cx = posC.x - minX + pad + nodeWidth/2;
                 const cy = posC.y - minY + pad;
                 return (
-                  <path 
-                    key={`s-c-${r.id}`} 
-                    d={`M ${px} ${py} C ${px} ${py + 100}, ${cx} ${cy - 100}, ${cx} ${cy}`} 
-                    fill="none" stroke="#D4AF37" strokeWidth="2" opacity="0.7" 
-                  />
+                  <g key={`s-c-${r.id}`}>
+                    <title>Cliquer pour voir/modifier la relation</title>
+                    <path 
+                      d={`M ${px} ${py} C ${px} ${py + 100}, ${cx} ${cy - 100}, ${cx} ${cy}`} 
+                      fill="none" stroke="#D4AF37" strokeWidth="2" opacity="0.7"
+                      style={{ cursor: onViewRelationship ? 'pointer' : 'default' }}
+                      onClick={() => onViewRelationship && onViewRelationship(r.id)}
+                    />
+                  </g>
                 );
               });
             })}
@@ -332,6 +455,26 @@ export const TreeVisualization = memo(({
                 <span className="dates">{p.birthDate ? new Date(p.birthDate).getFullYear() : '????'}</span>
                 
                 <div className="node-actions">
+                  {onViewPerson && (
+                    <button 
+                      className="btn-view" 
+                      title="Voir les détails" 
+                      onClick={() => onViewPerson(p.id)}
+                      style={{
+                        background: '#326C58',
+                        color: 'white',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        fontSize: '0.7rem',
+                        cursor: 'pointer',
+                        marginBottom: '4px',
+                        width: '100%'
+                      }}
+                    >
+                      👁️ Détails
+                    </button>
+                  )}
                   <button className="btn-child" title="Ajouter un enfant" onClick={() => onAddPerson(p.id, 'CHILD')}>
                     <Users size={14}/> + ENFANT
                   </button>

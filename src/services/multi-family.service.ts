@@ -4,8 +4,31 @@ export interface FamilyMergeRequest {
   id: number;
   sourceFamilyId: number;
   targetFamilyId: number;
+  requesterId: number;
+  sourcePersonId: number;
+  targetPersonId: number;
+  relationshipType: 'PARENTAL' | 'UNION' | 'SIBLING';
+  justification?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   createdAt: string;
+  sourceFamily?: {
+    familyName: string;
+  };
+  targetFamily?: {
+    familyName: string;
+  };
+  sourcePerson?: {
+    firstName: string;
+    lastName: string;
+  };
+  targetPerson?: {
+    firstName: string;
+    lastName: string;
+  };
+  requester?: {
+    displayName: string;
+  };
+  // Compatibilité avec l'ancien code
   sourceFamilyName?: string;
   targetFamilyName?: string;
 }
@@ -13,6 +36,10 @@ export interface FamilyMergeRequest {
 export interface FusionRequestData {
   sourceFamilyId: number;
   targetFamilyId: number;
+  sourcePersonId: number; // Personne de la famille source (requis)
+  targetPersonId: number; // Personne de la famille cible (requis)
+  relationshipType: 'PARENTAL' | 'UNION' | 'SIBLING'; // Requis
+  justification?: string; // Optionnel
 }
 
 export interface ValidateCrossRelationshipData {
@@ -86,12 +113,33 @@ export const multiFamilyService = {
    * Endpoint: POST /api/family/validate-cross-relationship
    */
   async validateFusionRequest(data: ValidateCrossRelationshipData): Promise<{ 
-    success: boolean; 
-    connection?: FamilyConnection;
-    message: string;
+    updatedRequest: FamilyMergeRequest;
+    connection?: {
+      id: number;
+      familyAId: number;
+      familyBId: number;
+      createdAt: string;
+    };
+    relationship?: {
+      id: number;
+      personAId: number;
+      personBId: number;
+      type: 'PARENTAL' | 'UNION' | 'SIBLING';
+      status: 'ACTIVE' | 'ENDED' | 'DECEASED';
+      startDate: string;
+      isBiological: boolean;
+    };
+    message?: string;
+    // Compatibilité avec l'ancien code
+    success?: boolean;
   }> {
     const response = await api.post('/family/validate-cross-relationship', data);
-    return response.data;
+    const result = response.data;
+    // Assurer la compatibilité avec l'ancien code
+    if (result.updatedRequest && !result.success) {
+      result.success = true;
+    }
+    return result;
   },
 
   /**
@@ -102,13 +150,18 @@ export const multiFamilyService = {
     personAId: number;
     personBId: number;
     type: 'PARENTAL' | 'UNION' | 'SIBLING';
-    isBiological: boolean;
+    isBiological?: boolean; // Optionnel, défaut: true
+    startDate?: string; // Format: "2024-06-15" (optionnel)
+    notes?: string; // Optionnel
   }): Promise<{
     id: number;
     personAId: number;
     personBId: number;
     type: string;
     isBiological: boolean;
+    status?: 'ACTIVE' | 'ENDED' | 'DECEASED';
+    startDate?: string;
+    notes?: string;
   }> {
     const response = await api.post('/relationship', data);
     return response.data;
