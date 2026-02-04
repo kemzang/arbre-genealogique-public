@@ -1,11 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './App.scss'
 import RegisterPage from './auth/register/page'
 import LoginPage from './auth/login/page'
 import DashboardPage from './pages/dashboard/page'
+import AdminDashboard from './pages/admin/AdminDashboard'
 import ErrorBoundary from './components/ErrorBoundary'
-import { authService } from './services/auth.service';
+import { authService, type User } from './services/auth.service';
 
 function AuthPage() {
   const [isSignIn, setIsSignIn] = useState(true)
@@ -48,6 +49,53 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return children;
 }
 
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    // Use a small delay to ensure localStorage is fully loaded
+    const checkUser = () => {
+      console.log('SuperAdminRoute - Checking user authentication...');
+      
+      // Validate and fix user data if needed
+      const validatedUser = authService.validateAndFixUserData();
+      console.log('SuperAdminRoute - Validated user:', validatedUser);
+      
+      setUser(validatedUser);
+      setIsLoading(false);
+    };
+    
+    // Small delay to ensure localStorage is ready
+    setTimeout(checkUser, 100);
+  }, []);
+  
+  if (isLoading) {
+    return (
+      <div className="loader-page">
+        <span className="loader"></span>
+        <p>Vérification des permissions...</p>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    console.log('SuperAdminRoute - No user, redirecting to /');
+    return <Navigate to="/" replace />;
+  }
+  
+  const isSuper = authService.isSuperAdmin(user);
+  console.log('SuperAdminRoute - isSuperAdmin result:', isSuper);
+  
+  if (!isSuper) {
+    console.log('SuperAdminRoute - Not super admin, redirecting to /dashboard');
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  console.log('SuperAdminRoute - Access granted to admin dashboard');
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -61,6 +109,16 @@ function App() {
                 <DashboardPage />
               </ErrorBoundary>
             </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin" 
+          element={
+            <SuperAdminRoute>
+              <ErrorBoundary>
+                <AdminDashboard />
+              </ErrorBoundary>
+            </SuperAdminRoute>
           } 
         />
       </Routes>

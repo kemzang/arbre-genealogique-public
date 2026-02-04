@@ -3081,3 +3081,15 @@
     }
   }
 }
+// Admin button styles
+.btn-nav.admin-btn {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: 2px solid transparent;
+  
+  &:hover {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  }
+}

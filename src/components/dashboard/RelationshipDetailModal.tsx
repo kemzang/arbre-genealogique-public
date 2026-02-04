@@ -1,6 +1,6 @@
-import React, { memo, useState, useEffect } from 'react';
-import { X, Edit2, Save, XCircle, Trash2, AlertTriangle } from 'lucide-react';
-import { treeService, type RelationshipDetails, type Relationship, type EndRelationshipRequest } from '../../services/tree.service';
+import { memo, useState, useEffect } from 'react';
+import { X, Edit2, Save, XCircle, Trash2 } from 'lucide-react';
+import { treeService, type RelationshipDetails, type EndRelationshipRequest } from '../../services/tree.service';
 
 interface RelationshipDetailModalProps {
   relationshipId: number | null;

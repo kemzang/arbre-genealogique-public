@@ -5,7 +5,8 @@ import {
   MessageCircle, 
   Calendar, 
   ArrowRight, 
-  LogOut 
+  LogOut,
+  Shield
 } from 'lucide-react';
 import './dashboard.scss';
 
@@ -24,6 +25,7 @@ import { EventsInterface } from '../../components/dashboard/EventsInterface';
 import { FusionInterface } from '../../components/dashboard/FusionInterface';
 import { MediaViewer } from '../../components/dashboard/MediaViewer';
 import { AddPersonModal } from '../../components/dashboard/AddPersonModal';
+import { AuthTest } from '../../components/AuthTest';
 import { PersonDetailModal } from '../../components/dashboard/PersonDetailModal';
 import { RelationshipDetailModal } from '../../components/dashboard/RelationshipDetailModal';
 
@@ -69,12 +71,14 @@ export default function DashboardPage() {
 
   // Initialize user and families
   useEffect(() => {
-    const u = authService.getCurrentUser();
+    // Validate and fix user data if needed
+    const u = authService.validateAndFixUserData();
     if (!u) {
       navigate('/');
       return;
     }
     
+    console.log('DashboardPage - Validated user:', u);
     setUser(u);
     familyData.initializeFamilies();
   }, [navigate]);
@@ -101,6 +105,13 @@ export default function DashboardPage() {
 
   const handleLogout = () => {
     setShowLogoutModal(true);
+  };
+
+  // Fonction temporaire pour nettoyer le localStorage
+  const handleClearStorage = () => {
+    authService.clearAllAuthData();
+    alert('LocalStorage nettoyé. Veuillez vous reconnecter.');
+    navigate('/');
   };
 
   const confirmLogout = () => {
@@ -138,6 +149,9 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-container">
+      {/* Auth Test Component - Remove in production */}
+      <AuthTest />
+      
       {/* Media Viewer Modal */}
       <MediaViewer
         showMediaViewer={mediaViewer.showMediaViewer}
@@ -178,6 +192,15 @@ export default function DashboardPage() {
               )}
             </>
           )}
+          {authService.isSuperAdmin(user) && (
+            <button 
+              className="btn-nav admin-btn" 
+              onClick={() => navigate('/admin')} 
+              title="Panneau d'Administration"
+            >
+              <Shield size={16} style={{marginRight: 8, verticalAlign: 'middle'}}/> Admin
+            </button>
+          )}
           <div className="profile">
             <div className="avatar">
               {user?.displayName?.[0].toUpperCase() || 'U'}
@@ -189,6 +212,28 @@ export default function DashboardPage() {
           </div>
           <button className="btn-nav icon-only" onClick={handleLogout} title="Déconnexion">
             <LogOut size={16}/>
+          </button>
+          {/* Bouton temporaire pour nettoyer le localStorage */}
+          <button 
+            className="btn-nav" 
+            onClick={handleClearStorage} 
+            title="Nettoyer LocalStorage"
+            style={{background: '#ef4444', color: 'white', fontSize: '0.75rem'}}
+          >
+            Clear
+          </button>
+          {/* Bouton de debug pour tester l'authentification */}
+          <button 
+            className="btn-nav" 
+            onClick={() => {
+              const currentUser = authService.validateAndFixUserData();
+              const isAdmin = authService.isSuperAdmin(currentUser);
+              alert(`User: ${currentUser?.displayName}\nIs Super Admin: ${isAdmin}\nUser Data: ${JSON.stringify(currentUser, null, 2)}`);
+            }} 
+            title="Debug Auth"
+            style={{background: '#3b82f6', color: 'white', fontSize: '0.75rem'}}
+          >
+            Debug
           </button>
         </div>
       </header>
