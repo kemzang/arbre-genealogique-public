@@ -16,66 +16,25 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { type AdminStats } from '../../services/admin.service';
+import { 
+  type TimelineData, 
+  type DistributionData, 
+  type EngagementData
+} from '../../services/admin.service';
 
 interface AdminChartsProps {
-  stats: AdminStats | null;
+  timelineData: TimelineData[];
+  distributionData: DistributionData | null;
+  engagementData: EngagementData | null;
   loading: boolean;
 }
 
-// Données de démonstration - seront remplacées par les vraies données
-const generateTimelineData = () => {
-  const data = [];
-  const today = new Date();
-  
-  for (let i = 29; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    
-    data.push({
-      date: date.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }),
-      utilisateurs: Math.floor(Math.random() * 20) + 5,
-      familles: Math.floor(Math.random() * 8) + 1,
-      messages: Math.floor(Math.random() * 150) + 50,
-      medias: Math.floor(Math.random() * 30) + 10
-    });
-  }
-  
-  return data;
-};
-
-const generateUserDistribution = () => [
-  { name: 'Utilisateurs', value: 85, color: '#3b82f6' },
-  { name: 'Admins', value: 12, color: '#10b981' },
-  { name: 'Super-Admins', value: 3, color: '#f59e0b' }
-];
-
-const generateFamilySizes = () => [
-  { size: '1-5 membres', count: 45, color: '#8b5cf6' },
-  { size: '6-10 membres', count: 28, color: '#06b6d4' },
-  { size: '11-20 membres', count: 15, color: '#84cc16' },
-  { size: '20+ membres', count: 8, color: '#ef4444' }
-];
-
-const generateActivityHours = () => {
-  const hours = [];
-  for (let i = 0; i < 24; i++) {
-    hours.push({
-      hour: `${i}h`,
-      activite: Math.floor(Math.random() * 100) + (i >= 8 && i <= 22 ? 50 : 10)
-    });
-  }
-  return hours;
-};
-
-const generateEngagementData = () => [
-  { status: 'Très actifs', count: 35, color: '#10b981' },
-  { status: 'Actifs', count: 42, color: '#3b82f6' },
-  { status: 'Peu actifs', count: 18, color: '#f59e0b' },
-  { status: 'Inactifs', count: 12, color: '#ef4444' }
-];
-
-export const AdminCharts = memo(({ loading }: AdminChartsProps) => {
+export const AdminCharts = memo(({ 
+  timelineData, 
+  distributionData, 
+  engagementData, 
+  loading 
+}: AdminChartsProps) => {
   if (loading) {
     return (
       <div className="admin-charts loading">
@@ -90,11 +49,62 @@ export const AdminCharts = memo(({ loading }: AdminChartsProps) => {
     );
   }
 
-  const timelineData = generateTimelineData();
-  const userDistribution = generateUserDistribution();
-  const familySizes = generateFamilySizes();
-  const activityHours = generateActivityHours();
-  const engagementData = generateEngagementData();
+  // Si aucune donnée n'est disponible, afficher un message informatif
+  if (!Array.isArray(timelineData) || timelineData.length === 0) {
+    return (
+      <div className="admin-charts">
+        <div className="charts-grid">
+          <div className="chart-card full-width">
+            <div className="chart-header">
+              <h3>Données en cours de chargement</h3>
+              <p>Les graphiques seront affichés une fois les données récupérées depuis le backend.</p>
+            </div>
+            <div className="chart-container" style={{ textAlign: 'center', padding: '3rem' }}>
+              <div className="loader"></div>
+              <p style={{ marginTop: '1rem', color: '#64748b' }}>
+                Récupération des données en cours...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Préparer les données pour les graphiques
+  const timelineChartData = Array.isArray(timelineData) && timelineData.length > 0 ? timelineData.map(item => ({
+    date: new Date(item.date).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }),
+    utilisateurs: item.users || 0,
+    familles: item.families || 0,
+    messages: item.messages || 0,
+    medias: item.medias || 0
+  })) : [];
+
+  const userDistribution = distributionData?.roles ? [
+    { name: 'Utilisateurs', value: distributionData.roles.USER || 0, color: '#3b82f6' },
+    { name: 'Admins', value: distributionData.roles.ADMIN || 0, color: '#10b981' },
+    { name: 'Super-Admins', value: distributionData.roles.SUPER_ADMIN || 0, color: '#f59e0b' }
+  ] : [];
+
+  const familySizes = distributionData?.familySizes ? [
+    { size: '1-5 membres', count: distributionData.familySizes['1-5'] || 0, color: '#8b5cf6' },
+    { size: '6-10 membres', count: distributionData.familySizes['6-10'] || 0, color: '#06b6d4' },
+    { size: '11-20 membres', count: distributionData.familySizes['11-20'] || 0, color: '#84cc16' },
+    { size: '20+ membres', count: distributionData.familySizes['20+'] || 0, color: '#ef4444' }
+  ] : [];
+
+  const activityHours = distributionData?.hourlyActivity && Array.isArray(distributionData.hourlyActivity) ? 
+    distributionData.hourlyActivity.map(item => ({
+      hour: `${item.hour}h`,
+      activite: item.activity || 0
+    })) : [];
+
+  const engagementChartData = engagementData ? [
+    { status: 'Très actifs', count: engagementData.veryActive || 0, color: '#10b981' },
+    { status: 'Actifs', count: engagementData.active || 0, color: '#3b82f6' },
+    { status: 'Peu actifs', count: engagementData.lowActive || 0, color: '#f59e0b' },
+    { status: 'Inactifs', count: engagementData.inactive || 0, color: '#ef4444' }
+  ] : [];
 
   return (
     <div className="admin-charts">
@@ -107,33 +117,39 @@ export const AdminCharts = memo(({ loading }: AdminChartsProps) => {
             <p>Croissance quotidienne des inscriptions</p>
           </div>
           <div className="chart-container">
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={timelineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="date" 
-                  stroke="#64748b"
-                  fontSize={12}
-                />
-                <YAxis stroke="#64748b" fontSize={12} />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="utilisateurs"
-                  stroke="#3b82f6"
-                  fill="#3b82f6"
-                  fillOpacity={0.2}
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {timelineChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={timelineChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#64748b"
+                    fontSize={12}
+                  />
+                  <YAxis stroke="#64748b" fontSize={12} />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="utilisateurs"
+                    stroke="#3b82f6"
+                    fill="#3b82f6"
+                    fillOpacity={0.2}
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                Aucune donnée disponible
+              </div>
+            )}
           </div>
         </div>
 
@@ -144,32 +160,38 @@ export const AdminCharts = memo(({ loading }: AdminChartsProps) => {
             <p>Distribution des utilisateurs par rôle</p>
           </div>
           <div className="chart-container">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={userDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {userDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value) => [`${value}%`, 'Pourcentage']}
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            {userDistribution.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={userDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {userDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value) => [`${value}%`, 'Pourcentage']}
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                Aucune donnée disponible
+              </div>
+            )}
           </div>
         </div>
 
@@ -180,29 +202,35 @@ export const AdminCharts = memo(({ loading }: AdminChartsProps) => {
             <p>Répartition de l'activité sur 24h</p>
           </div>
           <div className="chart-container">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={activityHours}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="hour" 
-                  stroke="#64748b"
-                  fontSize={12}
-                />
-                <YAxis stroke="#64748b" fontSize={12} />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Bar 
-                  dataKey="activite" 
-                  fill="#8b5cf6"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {activityHours.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={activityHours}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="hour" 
+                    stroke="#64748b"
+                    fontSize={12}
+                  />
+                  <YAxis stroke="#64748b" fontSize={12} />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Bar 
+                    dataKey="activite" 
+                    fill="#8b5cf6"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                Aucune donnée disponible
+              </div>
+            )}
           </div>
         </div>
 
@@ -213,31 +241,37 @@ export const AdminCharts = memo(({ loading }: AdminChartsProps) => {
             <p>Distribution par nombre de membres</p>
           </div>
           <div className="chart-container">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={familySizes} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis type="number" stroke="#64748b" fontSize={12} />
-                <YAxis 
-                  type="category" 
-                  dataKey="size" 
-                  stroke="#64748b"
-                  fontSize={12}
-                  width={80}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Bar 
-                  dataKey="count" 
-                  fill="#10b981"
-                  radius={[0, 4, 4, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {familySizes.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={familySizes} layout="horizontal">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis type="number" stroke="#64748b" fontSize={12} />
+                  <YAxis 
+                    type="category" 
+                    dataKey="size" 
+                    stroke="#64748b"
+                    fontSize={12}
+                    width={80}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Bar 
+                    dataKey="count" 
+                    fill="#10b981"
+                    radius={[0, 4, 4, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                Aucune donnée disponible
+              </div>
+            )}
           </div>
         </div>
 
@@ -251,14 +285,14 @@ export const AdminCharts = memo(({ loading }: AdminChartsProps) => {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={engagementData}
+                  data={engagementChartData}
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
                   dataKey="count"
                   label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                 >
-                  {engagementData.map((entry, index) => (
+                  {engagementChartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -283,7 +317,7 @@ export const AdminCharts = memo(({ loading }: AdminChartsProps) => {
           </div>
           <div className="chart-container">
             <ResponsiveContainer width="100%" height={400}>
-              <LineChart data={timelineData}>
+              <LineChart data={timelineChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis 
                   dataKey="date" 

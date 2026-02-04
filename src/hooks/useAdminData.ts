@@ -4,13 +4,24 @@ import {
   type AdminStats, 
   type ActivityLog, 
   type AdminUser, 
-  type AdminFamily
+  type AdminFamily,
+  type TimelineData,
+  type DistributionData,
+  type EngagementData,
+  type SystemData
 } from '../services/admin.service';
 
 export const useAdminData = () => {
   // Stats
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+
+  // Charts data
+  const [timelineData, setTimelineData] = useState<TimelineData[]>([]);
+  const [distributionData, setDistributionData] = useState<DistributionData | null>(null);
+  const [engagementData, setEngagementData] = useState<EngagementData | null>(null);
+  const [systemData, setSystemData] = useState<SystemData | null>(null);
+  const [chartsLoading, setChartsLoading] = useState(false);
 
   // Activity
   const [activities, setActivities] = useState<ActivityLog[]>([]);
@@ -42,6 +53,33 @@ export const useAdminData = () => {
       console.error('Error loading admin stats:', error);
     } finally {
       setStatsLoading(false);
+    }
+  }, []);
+
+  // Load Charts Data
+  const loadChartsData = useCallback(async () => {
+    setChartsLoading(true);
+    try {
+      const [timeline, distribution, engagement, system] = await Promise.all([
+        adminService.getTimeline('30d'),
+        adminService.getDistribution(),
+        adminService.getEngagement(),
+        adminService.getSystemStats()
+      ]);
+
+      setTimelineData(Array.isArray(timeline) ? timeline : []);
+      setDistributionData(distribution || null);
+      setEngagementData(engagement || null);
+      setSystemData(system || null);
+    } catch (error) {
+      console.error('Error loading charts data:', error);
+      // Set safe fallback values
+      setTimelineData([]);
+      setDistributionData(null);
+      setEngagementData(null);
+      setSystemData(null);
+    } finally {
+      setChartsLoading(false);
     }
   }, []);
 
@@ -169,6 +207,14 @@ export const useAdminData = () => {
     stats,
     statsLoading,
     loadStats,
+
+    // Charts
+    timelineData,
+    distributionData,
+    engagementData,
+    systemData,
+    chartsLoading,
+    loadChartsData,
 
     // Activity
     activities,

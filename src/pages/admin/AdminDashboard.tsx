@@ -51,6 +51,7 @@ export default function AdminDashboard() {
     
     // Load initial data
     adminData.loadStats();
+    adminData.loadChartsData();
     adminData.loadActivity();
   }, [navigate]);
 
@@ -174,8 +175,10 @@ export default function AdminDashboard() {
             />
             
             <AdminCharts 
-              stats={adminData.stats} 
-              loading={adminData.statsLoading} 
+              timelineData={adminData.timelineData}
+              distributionData={adminData.distributionData}
+              engagementData={adminData.engagementData}
+              loading={adminData.chartsLoading} 
             />
           </div>
         )}
