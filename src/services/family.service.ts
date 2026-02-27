@@ -21,6 +21,8 @@ export interface PendingMember {
   familyId: number;
   userId: number;
   userEmail: string;
+  userDisplayName?: string;
+  profilePictureUrl?: string;
   joinedAt: string;
   applicationData: {
     gender: 'M' | 'F' | 'O';

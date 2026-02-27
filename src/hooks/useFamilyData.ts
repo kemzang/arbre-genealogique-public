@@ -5,6 +5,7 @@ import { chatService, type ChatRoom, type Message } from '../services/chat.servi
 import { mediaService, type MediaItem } from '../services/media.service';
 import { eventService, type FamilyEvent } from '../services/event.service';
 import { multiFamilyService, type FamilyMergeRequest } from '../services/multi-family.service';
+import { familyService, type PendingMember } from '../services/family.service';
 
 export const useFamilyData = () => {
   const [userFamilies, setUserFamilies] = useState<MemberStatus[]>([]);
@@ -14,16 +15,19 @@ export const useFamilyData = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [mediaList, setMediaList] = useState<MediaItem[]>([]);
   const [familyEvents, setFamilyEvents] = useState<FamilyEvent[]>([]);
+  const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
   const [pendingFusionRequests, setPendingFusionRequests] = useState<FamilyMergeRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadFamilyData = useCallback(async (familyId: number) => {
     try {
-      const [tree, rooms, media, events] = await Promise.all([
+      const [tree, rooms, media, events, fusionRequests, pendingMembersResult] = await Promise.all([
         treeService.getTree(familyId),
         chatService.getChatRooms(familyId),
         mediaService.getRecentMedia(familyId),
-        eventService.getFamilyEvents(familyId)
+        eventService.getFamilyEvents(familyId),
+        familyService.getPendingFusionRequests(),
+        familyService.getPendingMembers()
       ]);
 
       setTreeData(tree);
@@ -37,8 +41,14 @@ export const useFamilyData = () => {
         setMessages(msgs);
       }
 
-      // Charger les demandes de fusion (TODO: implémenter l'endpoint)
-      setPendingFusionRequests([]);
+      // Filtrer les demandes de fusion pertinentes pour la famille courante
+      const relevantFusionRequests = fusionRequests.filter(
+        (req) => req.sourceFamilyId === familyId || req.targetFamilyId === familyId
+      );
+      setPendingFusionRequests(relevantFusionRequests);
+
+      // Mettre à jour les demandes d'adhésion en attente
+      setPendingMembers(pendingMembersResult);
       
     } catch (err) {
       console.error("Error loading family data:", err);
@@ -93,6 +103,29 @@ export const useFamilyData = () => {
     }
   }, []);
 
+  const refreshPendingMembers = useCallback(async () => {
+    try {
+      const result = await familyService.getPendingMembers();
+      setPendingMembers(result);
+    } catch (err) {
+      console.error("Error loading pending members", err);
+    }
+  }, []);
+
+  const validatePendingMember = useCallback(async (
+    targetMemberId: number,
+    vote: 'APPROVE' | 'REJECT'
+  ): Promise<boolean> => {
+    try {
+      await memberService.validateMember({ targetMemberId, vote });
+      await refreshPendingMembers();
+      return true;
+    } catch (err) {
+      console.error("Error validating member", err);
+      return false;
+    }
+  }, [refreshPendingMembers]);
+
   const createFusionRequest = useCallback(async (data: {
     targetFamilyId: number;
     sourcePersonId: number;
@@ -143,6 +176,7 @@ export const useFamilyData = () => {
     messages,
     mediaList,
     familyEvents,
+    pendingMembers,
     pendingFusionRequests,
     isLoading,
     
@@ -153,6 +187,7 @@ export const useFamilyData = () => {
     loadMedia,
     createFusionRequest,
     validateFusionRequest,
+    validatePendingMember,
     
     // Setters (pour les composants enfants)
     setMessages,

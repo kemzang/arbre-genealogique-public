@@ -23,6 +23,7 @@ import { TreeVisualization } from '../../components/dashboard/TreeVisualization'
 import { ChatInterface } from '../../components/dashboard/ChatInterface';
 import { EventsInterface } from '../../components/dashboard/EventsInterface';
 import { FusionInterface } from '../../components/dashboard/FusionInterface';
+import { PendingMembersPanel } from '../../components/dashboard/PendingMembersPanel';
 import { MediaViewer } from '../../components/dashboard/MediaViewer';
 import { AddPersonModal } from '../../components/dashboard/AddPersonModal';
 import { PersonDetailModal } from '../../components/dashboard/PersonDetailModal';
@@ -32,6 +33,8 @@ import { RelationshipDetailModal } from '../../components/dashboard/Relationship
 import { authService, type User } from '../../services/auth.service';
 import { familyService } from '../../services/family.service';
 import { treeService } from '../../services/tree.service';
+import { mediaService } from '../../services/media.service';
+import { eventService } from '../../services/event.service';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -49,6 +52,18 @@ export default function DashboardPage() {
   const [newFamilyName, setNewFamilyName] = useState('');
   const [createFamilyError, setCreateFamilyError] = useState<string | null>(null);
   const [isCreatingFamily, setIsCreatingFamily] = useState(false);
+
+  // Join family modal
+  const [showJoinFamilyModal, setShowJoinFamilyModal] = useState(false);
+  const [familySearchQuery, setFamilySearchQuery] = useState('');
+  const [isSearchingFamilies, setIsSearchingFamilies] = useState(false);
+  const [familySearchResults, setFamilySearchResults] = useState<Array<{ id: number; familyName: string }>>([]);
+  const [selectedJoinFamilyId, setSelectedJoinFamilyId] = useState<number | null>(null);
+  const [joinGender, setJoinGender] = useState<'M' | 'F' | 'O'>('M');
+  const [joinRelationshipType, setJoinRelationshipType] = useState<'PARENTAL' | 'UNION' | 'SIBLING'>('PARENTAL');
+  const [joinRelatedPersonId, setJoinRelatedPersonId] = useState<string>('');
+  const [isSubmittingJoin, setIsSubmittingJoin] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
   
   // Media filter
   const [mediaFilter, setMediaFilter] = useState<'ALL' | 'IMAGE' | 'VIDEO' | 'FILE'>('ALL');
@@ -99,6 +114,63 @@ export default function DashboardPage() {
     setNewFamilyName('');
     setCreateFamilyError(null);
     setShowCreateFamilyModal(true);
+  };
+
+  const openJoinFamilyModal = () => {
+    setFamilySearchQuery('');
+    setFamilySearchResults([]);
+    setSelectedJoinFamilyId(null);
+    setJoinGender('M');
+    setJoinRelationshipType('PARENTAL');
+    setJoinRelatedPersonId('');
+    setJoinError(null);
+    setShowJoinFamilyModal(true);
+  };
+
+  const closeJoinFamilyModal = () => {
+    if (!isSubmittingJoin && !isSearchingFamilies) {
+      setShowJoinFamilyModal(false);
+    }
+  };
+
+  const handleSearchFamilies = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!familySearchQuery.trim()) return;
+    setIsSearchingFamilies(true);
+    setJoinError(null);
+    try {
+      const results = await familyService.searchFamilies(familySearchQuery.trim());
+      setFamilySearchResults(results);
+    } catch (err) {
+      console.error('Erreur recherche famille:', err);
+      setJoinError("Impossible de rechercher des familles. Vérifiez votre connexion.");
+    } finally {
+      setIsSearchingFamilies(false);
+    }
+  };
+
+  const handleSubmitJoinFamily = async () => {
+    if (!selectedJoinFamilyId) {
+      setJoinError('Veuillez sélectionner une famille.');
+      return;
+    }
+    setIsSubmittingJoin(true);
+    setJoinError(null);
+    try {
+      await familyService.joinFamily({
+        familyId: selectedJoinFamilyId,
+        gender: joinGender,
+        relatedToPersonId: joinRelatedPersonId ? Number(joinRelatedPersonId) : undefined,
+        relationshipType: joinRelationshipType
+      });
+      setShowJoinFamilyModal(false);
+      alert('Votre demande pour rejoindre cette famille a été envoyée. Les administrateurs doivent la valider.');
+    } catch (err) {
+      console.error('Erreur demande de rejoindre une famille:', err);
+      setJoinError("Impossible d'envoyer la demande. Vérifiez votre connexion ou si une demande existe déjà.");
+    } finally {
+      setIsSubmittingJoin(false);
+    }
   };
 
   const closeCreateFamilyModal = () => {
@@ -245,7 +317,7 @@ export default function DashboardPage() {
               <button 
                 className="ghost" 
                 style={{color: '#326C58', borderColor: '#326C58'}} 
-                onClick={() => alert("Fonctionnalité de recherche de famille à implémenter")}
+                onClick={openJoinFamilyModal}
               >
                 Rejoindre une famille
               </button>
@@ -254,16 +326,25 @@ export default function DashboardPage() {
         ) : (
           <>
             {activeTab === 'TREE' && (
-              <div className="tree-visualizer">
-                <TreeVisualization
-                  treeData={familyData.treeData}
-                  treeZoom={treeManagement.treeZoom}
-                  setTreeZoom={treeManagement.setTreeZoom}
-                  onAddPerson={treeManagement.openAddPersonModal}
-                  onViewPerson={(personId) => setSelectedPersonId(personId)}
-                  onViewRelationship={(relationshipId) => setSelectedRelationshipId(relationshipId)}
-                />
-              </div>
+              <>
+                {familyData.pendingMembers.length > 0 && (
+                  <PendingMembersPanel
+                    currentFamily={familyData.currentFamily}
+                    pendingMembers={familyData.pendingMembers}
+                    onValidate={familyData.validatePendingMember}
+                  />
+                )}
+                <div className="tree-visualizer">
+                  <TreeVisualization
+                    treeData={familyData.treeData}
+                    treeZoom={treeManagement.treeZoom}
+                    setTreeZoom={treeManagement.setTreeZoom}
+                    onAddPerson={treeManagement.openAddPersonModal}
+                    onViewPerson={(personId) => setSelectedPersonId(personId)}
+                    onViewRelationship={(relationshipId) => setSelectedRelationshipId(relationshipId)}
+                  />
+                </div>
+              </>
             )}
             
             {activeTab === 'CHAT' && (
@@ -337,8 +418,29 @@ export default function DashboardPage() {
                 onViewEventDetails={events.handleViewEventDetails}
                 onDeleteEvent={(eventId) => events.handleDeleteEvent(eventId, familyData.familyEvents)}
                 onUploadEventMedia={async (eventId, files) => {
-                  // TODO: Implement event media upload
-                  console.log('Upload event media:', eventId, files);
+                  if (!familyData.currentFamily) return;
+                  try {
+                    const fileArray = Array.from(files);
+                    for (const file of fileArray) {
+                      await mediaService.uploadFile(
+                        file,
+                        familyData.currentFamily.familyId,
+                        undefined,
+                        eventId
+                      );
+                    }
+                    // Recharger les événements et les détails de l'événement courant
+                    const updatedEvents = await eventService.getFamilyEvents(familyData.currentFamily.familyId);
+                    familyData.setFamilyEvents(updatedEvents);
+                    const updatedEvent = updatedEvents.find((e) => e.id === eventId);
+                    if (updatedEvent) {
+                      await events.handleViewEventDetails(updatedEvent);
+                    }
+                    alert('Médias ajoutés avec succès à cet événement.');
+                  } catch (err) {
+                    console.error('Erreur upload médias événement:', err);
+                    alert("Erreur lors de l'ajout des médias. Vérifiez votre connexion.");
+                  }
                 }}
                 onOpenMediaViewer={mediaViewer.openMediaViewer}
                 getMediaUrl={getMediaUrl}
