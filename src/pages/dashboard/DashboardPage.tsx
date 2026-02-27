@@ -551,6 +551,207 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Join Family Modal */}
+      {showJoinFamilyModal && (
+        <div className="modal-overlay" onClick={closeJoinFamilyModal}>
+          <div
+            className="modal-content logout-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 480 }}
+          >
+            <h2>Rejoindre une famille</h2>
+            <p style={{ marginBottom: 16 }}>
+              Recherchez une famille puis envoyez une demande d'adhésion.
+            </p>
+
+            {/* Recherche de famille */}
+            <form onSubmit={handleSearchFamilies} style={{ marginBottom: 12 }}>
+              <input
+                type="text"
+                placeholder="Nom de la famille à rechercher"
+                value={familySearchQuery}
+                onChange={(e) => setFamilySearchQuery(e.target.value)}
+                disabled={isSearchingFamilies || isSubmittingJoin}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  marginBottom: 8,
+                  border: '1px solid #ddd',
+                  borderRadius: 8,
+                  fontSize: 16,
+                  boxSizing: 'border-box',
+                }}
+              />
+              <div className="logout-actions" style={{ justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={closeJoinFamilyModal}
+                  disabled={isSearchingFamilies || isSubmittingJoin}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="confirm-btn"
+                  disabled={isSearchingFamilies || !familySearchQuery.trim()}
+                  style={{ background: '#326C58' }}
+                >
+                  {isSearchingFamilies ? 'Recherche...' : 'Rechercher'}
+                </button>
+              </div>
+            </form>
+
+            {/* Résultats */}
+            {familySearchResults.length > 0 && (
+              <div
+                style={{
+                  maxHeight: 160,
+                  overflowY: 'auto',
+                  marginBottom: 12,
+                  border: '1px solid #eee',
+                  borderRadius: 8,
+                  padding: 8,
+                  background: '#fafafa',
+                }}
+              >
+                {familySearchResults.map((fam) => (
+                  <div
+                    key={fam.id}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '6px 4px',
+                      borderBottom: '1px solid #f0f0f0',
+                    }}
+                  >
+                    <div>
+                      <strong>{fam.familyName}</strong>
+                      <span style={{ marginLeft: 8, fontSize: 12, color: '#666' }}>
+                        #{fam.id}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="confirm-btn"
+                      style={{
+                        background:
+                          selectedJoinFamilyId === fam.id ? '#326C58' : '#e0e0e0',
+                        color: selectedJoinFamilyId === fam.id ? '#fff' : '#333',
+                        padding: '4px 10px',
+                        fontSize: 12,
+                      }}
+                      onClick={() => setSelectedJoinFamilyId(fam.id)}
+                      disabled={isSubmittingJoin}
+                    >
+                      {selectedJoinFamilyId === fam.id ? 'Sélectionnée' : 'Sélectionner'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Paramètres de la demande */}
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>
+                Genre
+              </label>
+              <select
+                value={joinGender}
+                onChange={(e) =>
+                  setJoinGender(e.target.value as 'M' | 'F' | 'O')
+                }
+                disabled={isSubmittingJoin}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: '1px solid #ddd',
+                }}
+              >
+                <option value="M">Homme</option>
+                <option value="F">Femme</option>
+                <option value="O">Autre</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>
+                Type de lien souhaité
+              </label>
+              <select
+                value={joinRelationshipType}
+                onChange={(e) =>
+                  setJoinRelationshipType(
+                    e.target.value as 'PARENTAL' | 'UNION' | 'SIBLING'
+                  )
+                }
+                disabled={isSubmittingJoin}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: '1px solid #ddd',
+                }}
+              >
+                <option value="PARENTAL">Parental (parent / enfant)</option>
+                <option value="UNION">Union (mariage, couple)</option>
+                <option value="SIBLING">Fratrie (frère / sœur)</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: 4 }}>
+                ID de la personne liée (optionnel)
+              </label>
+              <input
+                type="number"
+                value={joinRelatedPersonId}
+                onChange={(e) => setJoinRelatedPersonId(e.target.value)}
+                disabled={isSubmittingJoin}
+                placeholder="Ex: 12"
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: '1px solid #ddd',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <p style={{ fontSize: 11, color: '#777', marginTop: 4 }}>
+                Si vous connaissez l'identifiant de la personne de référence dans la
+                famille cible, indiquez-le ici (sinon laissez vide).
+              </p>
+            </div>
+
+            {joinError && (
+              <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 8 }}>
+                {joinError}
+              </p>
+            )}
+
+            <div className="logout-actions">
+              <button
+                className="cancel-btn"
+                onClick={closeJoinFamilyModal}
+                disabled={isSubmittingJoin}
+              >
+                Annuler
+              </button>
+              <button
+                className="confirm-btn"
+                onClick={handleSubmitJoinFamily}
+                disabled={isSubmittingJoin || !selectedJoinFamilyId}
+                style={{ background: '#326C58' }}
+              >
+                {isSubmittingJoin ? 'Envoi...' : 'Envoyer la demande'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div className="modal-overlay">
