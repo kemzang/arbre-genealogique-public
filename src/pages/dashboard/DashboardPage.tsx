@@ -43,6 +43,12 @@ export default function DashboardPage() {
   
   // Logout State
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // Create family modal
+  const [showCreateFamilyModal, setShowCreateFamilyModal] = useState(false);
+  const [newFamilyName, setNewFamilyName] = useState('');
+  const [createFamilyError, setCreateFamilyError] = useState<string | null>(null);
+  const [isCreatingFamily, setIsCreatingFamily] = useState(false);
   
   // Media filter
   const [mediaFilter, setMediaFilter] = useState<'ALL' | 'IMAGE' | 'VIDEO' | 'FILE'>('ALL');
@@ -89,16 +95,38 @@ export default function DashboardPage() {
     }
   }, [mediaFilter]);
 
-  const handleCreateFamily = async () => {
-    const name = prompt("Entrez le nom de votre famille :");
-    if (name) {
-      try {
-        await familyService.createFamily(name);
-        alert("Famille créée !");
-        window.location.reload(); 
-      } catch (e) {
-        alert("Erreur création famille");
-      }
+  const openCreateFamilyModal = () => {
+    setNewFamilyName('');
+    setCreateFamilyError(null);
+    setShowCreateFamilyModal(true);
+  };
+
+  const closeCreateFamilyModal = () => {
+    if (!isCreatingFamily) {
+      setShowCreateFamilyModal(false);
+      setNewFamilyName('');
+      setCreateFamilyError(null);
+    }
+  };
+
+  const handleSubmitCreateFamily = async () => {
+    const name = newFamilyName.trim();
+    if (!name) {
+      setCreateFamilyError('Veuillez entrer un nom pour votre famille.');
+      return;
+    }
+    setCreateFamilyError(null);
+    setIsCreatingFamily(true);
+    try {
+      await familyService.createFamily(name);
+      await familyData.initializeFamilies();
+      setShowCreateFamilyModal(false);
+      setNewFamilyName('');
+    } catch (e) {
+      console.error('Erreur création famille:', e);
+      setCreateFamilyError('Impossible de créer la famille. Vérifiez votre connexion ou réessayez.');
+    } finally {
+      setIsCreatingFamily(false);
     }
   };
 
@@ -213,7 +241,7 @@ export default function DashboardPage() {
             <h2>Bienvenue, {user?.displayName} !</h2>
             <p>Vous ne faites partie d'aucune famille pour l'instant.</p>
             <div className="actions">
-              <button onClick={handleCreateFamily}>Créer ma famille</button>
+              <button onClick={openCreateFamilyModal}>Créer ma famille</button>
               <button 
                 className="ghost" 
                 style={{color: '#326C58', borderColor: '#326C58'}} 
@@ -376,6 +404,49 @@ export default function DashboardPage() {
             }
           }}
         />
+      )}
+
+      {/* Create Family Modal */}
+      {showCreateFamilyModal && (
+        <div className="modal-overlay" onClick={closeCreateFamilyModal}>
+          <div className="modal-content logout-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
+            <h2>Créer ma famille</h2>
+            <p style={{ marginBottom: 16 }}>Choisissez un nom pour votre famille.</p>
+            <input
+              type="text"
+              placeholder="Nom de la famille"
+              value={newFamilyName}
+              onChange={(e) => setNewFamilyName(e.target.value)}
+              disabled={isCreatingFamily}
+              onKeyDown={(e) => e.key === 'Enter' && handleSubmitCreateFamily()}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                marginBottom: 8,
+                border: '1px solid #ddd',
+                borderRadius: 8,
+                fontSize: 16,
+                boxSizing: 'border-box',
+              }}
+            />
+            {createFamilyError && (
+              <p style={{ color: '#c0392b', fontSize: 13, marginBottom: 12 }}>{createFamilyError}</p>
+            )}
+            <div className="logout-actions">
+              <button className="cancel-btn" onClick={closeCreateFamilyModal} disabled={isCreatingFamily}>
+                Annuler
+              </button>
+              <button
+                className="confirm-btn"
+                onClick={handleSubmitCreateFamily}
+                disabled={isCreatingFamily}
+                style={{ background: '#326C58' }}
+              >
+                {isCreatingFamily ? 'Création...' : 'Créer la famille'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Logout Confirmation Modal */}
