@@ -30,6 +30,16 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface ForgotPasswordResponse {
+  message: string;
+  resetToken?: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+}
+
 export const authService = {
   // Fonction utilitaire pour vérifier si un utilisateur est super-admin
   isSuperAdmin(user: User | null): boolean {
@@ -121,6 +131,18 @@ export const authService = {
         
         console.log('User data stored in localStorage:', userData);
     }
+    return response.data;
+  },
+
+  // Mot de passe oublié
+  async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+    const response = await api.post<ForgotPasswordResponse>('/users/forgot-password', { email });
+    return response.data;
+  },
+
+  // Réinitialisation du mot de passe
+  async resetPassword(data: ResetPasswordRequest): Promise<{ message: string }> {
+    const response = await api.post<{ message: string }>('/users/reset-password', data);
     return response.data;
   },
 

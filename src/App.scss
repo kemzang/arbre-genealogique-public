@@ -1,3 +1,4 @@
+@use './pages/admin/admin.scss';
 @import url('https://fonts.googleapis.com/css?family=Montserrat:400,800');
 
 * {
@@ -77,6 +78,25 @@ button:focus {
 button.ghost {
 	background-color: transparent;
 	border-color: #FFFFFF;
+}
+
+button.link-button {
+	background: none;
+	border: none;
+	padding: 0;
+	margin: 0;
+	font-size: inherit;
+	font-weight: inherit;
+	letter-spacing: normal;
+	text-transform: none;
+	color: #326C58;
+	text-decoration: underline;
+	cursor: pointer;
+	border-radius: 0;
+}
+
+button.link-button:hover {
+	color: #245242;
 }
 
 form {
@@ -474,5 +494,3 @@ button {
         padding: 6px 20px; /* Plus compact */
     }
 }
-// Import admin styles
-@import './pages/admin/admin.scss';

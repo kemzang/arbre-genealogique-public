@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './App.scss'
 import RegisterPage from './auth/register/page'
 import LoginPage from './auth/login/page'
+import ForgotPasswordPage from './auth/forgot-password/page'
+import ResetPasswordPage from './auth/reset-password/page'
 import DashboardPage from './pages/dashboard/page'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -101,6 +103,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<AuthPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route 
           path="/dashboard" 
           element={

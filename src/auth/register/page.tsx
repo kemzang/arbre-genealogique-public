@@ -10,6 +10,7 @@ export default function RegisterPage({onSwitch}: {onSwitch: () => void}) {
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleProfilePictureSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,31 +47,31 @@ export default function RegisterPage({onSwitch}: {onSwitch: () => void}) {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setErrorMessage(null);
+
     if (!name.trim() || !email.trim() || !password.trim()) {
-      alert('Tous les champs sont requis');
+      setErrorMessage('Tous les champs sont requis.');
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
-      // Générer l'URL de la photo de profil
       const profilePictureUrl = await profileService.generateProfilePictureUrl(name, profilePicture || undefined);
-      
-      await authService.register({ 
-        name, 
-        email, 
-        password, 
-        profilePictureUrl 
+
+      await authService.register({
+        name,
+        email,
+        password,
+        profilePictureUrl,
       });
-      
+
       alert('Inscription réussie ! Vous pouvez maintenant vous connecter.');
       setIsLoading(false);
-      onSwitch(); // Switch to login view
-    } catch (error) {
-      console.error('Erreur d\'inscription:', error);
-      alert('Erreur lors de l\'inscription (email peut-être déjà utilisé)');
+      onSwitch();
+    } catch (err) {
+      console.error('Erreur d\'inscription:', err);
+      setErrorMessage('Erreur lors de l\'inscription. L\'email est peut-être déjà utilisé ou le serveur est indisponible.');
       setIsLoading(false);
     }
   };
@@ -148,6 +149,11 @@ export default function RegisterPage({onSwitch}: {onSwitch: () => void}) {
           required
         />
         
+        {errorMessage && (
+          <p className="form-error" style={{ margin: '8px 0 0', fontSize: 13, color: '#c0392b' }}>
+            {errorMessage}
+          </p>
+        )}
         <button type="submit" disabled={isLoading}>
             {isLoading ? <><span className="loader"></span> Inscription...</> : 'S\'inscrire'}
         </button>
