@@ -36,24 +36,38 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       }
 
       return (
-        <div className="error-boundary">
-          <div className="error-content">
-            <h2>Oops! Une erreur s'est produite</h2>
-            <p>Une erreur inattendue s'est produite. Veuillez réessayer.</p>
-            <details style={{ whiteSpace: 'pre-wrap', marginTop: '1rem' }}>
-              <summary>Détails de l'erreur</summary>
-              {this.state.error?.toString()}
-            </details>
+        <div className="error-boundary" style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '400px',
+          padding: '2rem'
+        }}>
+          <div className="error-content" style={{
+            backgroundColor: 'white',
+            padding: '2rem',
+            borderRadius: '8px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+            maxWidth: '500px',
+            textAlign: 'center'
+          }}>
+            <h2 style={{ color: '#d32f2f', marginBottom: '1rem' }}>
+              Oups ! Une erreur s'est produite
+            </h2>
+            <p style={{ color: '#666', marginBottom: '1.5rem' }}>
+              Une erreur inattendue s'est produite. Veuillez réessayer.
+            </p>
             <button 
               onClick={this.resetError}
               style={{
-                marginTop: '1rem',
-                padding: '8px 16px',
+                padding: '10px 24px',
                 backgroundColor: '#326C58',
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                fontSize: '1rem',
+                fontWeight: '500'
               }}
             >
               Réessayer

@@ -3,13 +3,15 @@ import { chatService, type CreateRoomRequest, type ChatRoom, type Message } from
 import { mediaService, type MediaItem } from '../services/media.service';
 import { type MemberStatus } from '../services/member.service';
 import { type User } from '../services/auth.service';
+import { type useToast } from './useToast';
 
 export const useChat = (
   currentFamily: MemberStatus | null,
   user: User | null,
   onMessagesUpdate: (messages: Message[]) => void,
   onRoomsUpdate: (rooms: ChatRoom[]) => void,
-  onMediaUpdate: () => void
+  onMediaUpdate: () => void,
+  toast: ReturnType<typeof useToast>
 ) => {
   const [activeRoomId, setActiveRoomId] = useState<number | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -41,13 +43,13 @@ export const useChat = (
     const file = files[0];
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
-      alert("Le fichier est trop volumineux. Taille maximale : 50MB");
+      toast.warning("Le fichier est trop volumineux. Taille maximale : 50MB");
       return;
     }
 
     setPendingFiles(prev => [...prev, file]);
     event.target.value = '';
-  }, []);
+  }, [toast]);
 
   const handleSendMessage = useCallback(async (
     e: React.FormEvent,
@@ -106,14 +108,17 @@ export const useChat = (
         onMediaUpdate();
       }
       
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to send message", err);
-      alert("Erreur lors de l'envoi du message. Vérifiez votre connexion.");
+      const errorMessage = err.userMessage || 
+        err.response?.data?.message || 
+        "Erreur lors de l'envoi du message. Vérifiez votre connexion.";
+      toast.error(errorMessage);
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
     }
-  }, [newMessage, pendingFiles, activeRoomId, currentFamily, user, onMessagesUpdate, onMediaUpdate]);
+  }, [newMessage, pendingFiles, activeRoomId, currentFamily, user, onMessagesUpdate, onMediaUpdate, toast]);
 
   const handleCreateRoom = useCallback(async (chatRooms: ChatRoom[]) => {
     if (!currentFamily) return;
@@ -139,11 +144,15 @@ export const useChat = (
       // Reset form
       setRoomFormData({ familyId: 0, name: '', description: '', isPrivate: false, participantIds: [] });
       setCreateRoomAvatarFile(null);
-    } catch (err) {
+      toast.success("Salon créé avec succès !");
+    } catch (err: any) {
       console.error("Create room error", err);
-      alert("Erreur lors de la création du salon.");
+      const errorMessage = err.userMessage || 
+        err.response?.data?.message || 
+        "Erreur lors de la création du salon.";
+      toast.error(errorMessage);
     }
-  }, [currentFamily, roomFormData, createRoomAvatarFile, onRoomsUpdate]);
+  }, [currentFamily, roomFormData, createRoomAvatarFile, onRoomsUpdate, toast]);
 
   const handleUpdateRoom = useCallback(async (chatRooms: ChatRoom[]) => {
     if (!editingRoom || !currentFamily) return;
@@ -167,12 +176,15 @@ export const useChat = (
       onRoomsUpdate(chatRooms.map(r => r.id === updated.id ? updated : r));
       setEditingRoom(updated); 
       setEditRoomAvatarFile(null);
-      alert("Salon mis à jour !");
-    } catch (err) {
+      toast.success("Salon mis à jour !");
+    } catch (err: any) {
       console.error("Update room error", err);
-      alert("Erreur lors de la mise à jour.");
+      const errorMessage = err.userMessage || 
+        err.response?.data?.message || 
+        "Erreur lors de la mise à jour.";
+      toast.error(errorMessage);
     }
-  }, [editingRoom, currentFamily, editRoomAvatarFile, onRoomsUpdate]);
+  }, [editingRoom, currentFamily, editRoomAvatarFile, onRoomsUpdate, toast]);
 
   return {
     // State

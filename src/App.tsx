@@ -8,6 +8,7 @@ import ResetPasswordPage from './auth/reset-password/page'
 import DashboardPage from './pages/dashboard/page'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ErrorBoundary from './components/ErrorBoundary'
+import { ToastProvider } from './contexts/ToastContext.tsx'
 import { authService, type User } from './services/auth.service';
 
 function AuthPage() {
@@ -101,31 +102,33 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<AuthPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <ErrorBoundary>
-                <DashboardPage />
-              </ErrorBoundary>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin" 
-          element={
-            <SuperAdminRoute>
-              <ErrorBoundary>
-                <AdminDashboard />
-              </ErrorBoundary>
-            </SuperAdminRoute>
-          } 
-        />
-      </Routes>
+      <ToastProvider>
+        <Routes>
+          <Route path="/" element={<AuthPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary>
+                  <DashboardPage />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin" 
+            element={
+              <SuperAdminRoute>
+                <ErrorBoundary>
+                  <AdminDashboard />
+                </ErrorBoundary>
+              </SuperAdminRoute>
+            } 
+          />
+        </Routes>
+      </ToastProvider>
     </BrowserRouter>
   )
 }

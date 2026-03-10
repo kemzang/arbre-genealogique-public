@@ -16,6 +16,7 @@ import { useChat } from '../../hooks/useChat';
 import { useTreeManagement } from '../../hooks/useTreeManagement';
 import { useEvents } from '../../hooks/useEvents';
 import { useMediaViewer } from '../../hooks/useMediaViewer';
+import { useToastContext } from '../../hooks/useToastContext';
 
 // Components
 import { FamilySelector } from '../../components/dashboard/FamilySelector';
@@ -73,20 +74,23 @@ export default function DashboardPage() {
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<number | null>(null);
 
   // Custom hooks
+  const toast = useToastContext();
   const familyData = useFamilyData();
   const mediaViewer = useMediaViewer();
   const treeManagement = useTreeManagement(
     familyData.currentFamily, 
     familyData.treeData, 
-    (tree) => familyData.setTreeData?.(tree)
+    (tree) => familyData.setTreeData?.(tree),
+    toast
   );
-  const events = useEvents(familyData.currentFamily, familyData.setFamilyEvents);
+  const events = useEvents(familyData.currentFamily, familyData.setFamilyEvents, toast);
   const chat = useChat(
     familyData.currentFamily,
     user,
     familyData.setMessages,
     familyData.setChatRooms,
-    () => familyData.loadMedia(familyData.currentFamily?.familyId || 0, mediaFilter)
+    () => familyData.loadMedia(familyData.currentFamily?.familyId || 0, mediaFilter),
+    toast
   );
 
   // Initialize user and families
@@ -141,9 +145,15 @@ export default function DashboardPage() {
     try {
       const results = await familyService.searchFamilies(familySearchQuery.trim());
       setFamilySearchResults(results);
-    } catch (err) {
+      if (results.length === 0) {
+        toast.info('Aucune famille trouvée avec ce nom.');
+      }
+    } catch (err: any) {
       console.error('Erreur recherche famille:', err);
-      setJoinError("Impossible de rechercher des familles. Vérifiez votre connexion.");
+      const errorMessage = err.userMessage || 
+        err.response?.data?.message || 
+        "Impossible de rechercher des familles. Vérifiez votre connexion.";
+      toast.error(errorMessage);
     } finally {
       setIsSearchingFamilies(false);
     }
@@ -151,7 +161,7 @@ export default function DashboardPage() {
 
   const handleSubmitJoinFamily = async () => {
     if (!selectedJoinFamilyId) {
-      setJoinError('Veuillez sélectionner une famille.');
+      toast.warning('Veuillez sélectionner une famille.');
       return;
     }
     setIsSubmittingJoin(true);
@@ -164,10 +174,13 @@ export default function DashboardPage() {
         relationshipType: joinRelationshipType
       });
       setShowJoinFamilyModal(false);
-      alert('Votre demande pour rejoindre cette famille a été envoyée. Les administrateurs doivent la valider.');
-    } catch (err) {
+      toast.success('Votre demande pour rejoindre cette famille a été envoyée. Les administrateurs doivent la valider.');
+    } catch (err: any) {
       console.error('Erreur demande de rejoindre une famille:', err);
-      setJoinError("Impossible d'envoyer la demande. Vérifiez votre connexion ou si une demande existe déjà.");
+      const errorMessage = err.userMessage || 
+        err.response?.data?.message || 
+        "Impossible d'envoyer la demande. Vérifiez votre connexion ou si une demande existe déjà.";
+      toast.error(errorMessage);
     } finally {
       setIsSubmittingJoin(false);
     }
@@ -184,7 +197,7 @@ export default function DashboardPage() {
   const handleSubmitCreateFamily = async () => {
     const name = newFamilyName.trim();
     if (!name) {
-      setCreateFamilyError('Veuillez entrer un nom pour votre famille.');
+      toast.warning('Veuillez entrer un nom pour votre famille.');
       return;
     }
     setCreateFamilyError(null);
@@ -194,9 +207,13 @@ export default function DashboardPage() {
       await familyData.initializeFamilies();
       setShowCreateFamilyModal(false);
       setNewFamilyName('');
-    } catch (e) {
+      toast.success('Famille créée avec succès !');
+    } catch (e: any) {
       console.error('Erreur création famille:', e);
-      setCreateFamilyError('Impossible de créer la famille. Vérifiez votre connexion ou réessayez.');
+      const errorMessage = e.userMessage || 
+        e.response?.data?.message || 
+        'Impossible de créer la famille. Vérifiez votre connexion ou réessayez.';
+      toast.error(errorMessage);
     } finally {
       setIsCreatingFamily(false);
     }
@@ -436,10 +453,13 @@ export default function DashboardPage() {
                     if (updatedEvent) {
                       await events.handleViewEventDetails(updatedEvent);
                     }
-                    alert('Médias ajoutés avec succès à cet événement.');
-                  } catch (err) {
+                    toast.success('Médias ajoutés avec succès à cet événement.');
+                  } catch (err: any) {
                     console.error('Erreur upload médias événement:', err);
-                    alert("Erreur lors de l'ajout des médias. Vérifiez votre connexion.");
+                    const errorMessage = err.userMessage || 
+                      err.response?.data?.message || 
+                      "Erreur lors de l'ajout des médias. Vérifiez votre connexion.";
+                    toast.error(errorMessage);
                   }
                 }}
                 onOpenMediaViewer={mediaViewer.openMediaViewer}

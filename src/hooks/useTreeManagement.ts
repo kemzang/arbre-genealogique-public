@@ -2,11 +2,13 @@ import { useState, useCallback } from 'react';
 import { treeService, type Relationship, type TreeData } from '../services/tree.service';
 import { type MemberStatus } from '../services/member.service';
 import { useSafeAsync } from './useSafeAsync';
+import { type useToast } from './useToast';
 
 export const useTreeManagement = (
   currentFamily: MemberStatus | null,
   treeData: TreeData | null,
-  onTreeUpdate: (tree: TreeData) => void
+  onTreeUpdate: (tree: TreeData) => void,
+  toast: ReturnType<typeof useToast>
 ) => {
   const { safeSetState } = useSafeAsync();
   
@@ -26,12 +28,12 @@ export const useTreeManagement = (
     e.preventDefault();
     if (!currentFamily) return;
     if (!newPerson.firstName || !newPerson.lastName) {
-      alert("Nom et Prénom requis");
+      toast.warning("Nom et Prénom requis");
       return;
     }
     
     if (treeData?.persons && treeData.persons.length > 0 && !relatedPersonId) {
-      alert("Veuillez sélectionner un membre parent/enfant/conjoint pour lier la nouvelle personne.");
+      toast.warning("Veuillez sélectionner un membre parent/enfant/conjoint pour lier la nouvelle personne.");
       return;
     }
 
@@ -119,13 +121,19 @@ export const useTreeManagement = (
         onTreeUpdate(updatedTree);
       });
       
-      alert("Membre ajouté avec succès !");
+      toast.success("Membre ajouté avec succès !");
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating person/relationship", error);
-      alert("Erreur lors de l'ajout. Vérifiez les données.");
+      
+      // Afficher un message d'erreur convivial
+      const errorMessage = error.userMessage || 
+        error.response?.data?.message || 
+        "Une erreur est survenue lors de l'ajout du membre. Veuillez réessayer.";
+      
+      toast.error(errorMessage);
     }
-  }, [currentFamily, newPerson, relatedPersonId, relationshipType, treeData, safeSetState, onTreeUpdate]);
+  }, [currentFamily, newPerson, relatedPersonId, relationshipType, treeData, safeSetState, onTreeUpdate, toast]);
 
   const openAddPersonModal = useCallback((personId?: number, relType?: 'PARENTAL' | 'CHILD' | 'SPOUSE' | 'SIBLING') => {
     setRelatedPersonId(personId || null);
