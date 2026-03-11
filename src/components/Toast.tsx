@@ -40,37 +40,26 @@ export const Toast: React.FC<ToastProps> = ({
   const style = colors[type];
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: '20px',
-      right: '20px',
-      backgroundColor: style.bg,
-      border: `1px solid ${style.border}`,
-      color: style.text,
-      padding: '12px 16px',
-      borderRadius: '8px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      minWidth: '300px',
-      maxWidth: '500px',
-      zIndex: 10000,
-      animation: 'slideIn 0.3s ease-out'
-    }}>
-      <style>{`
-        @keyframes slideIn {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-      `}</style>
-      
+    <div 
+      className="toast-notification"
+      style={{
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        backgroundColor: style.bg,
+        border: `1px solid ${style.border}`,
+        color: style.text,
+        padding: '12px 16px',
+        borderRadius: '8px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        minWidth: '300px',
+        maxWidth: '500px',
+        zIndex: 10000
+      }}
+    >
       <div style={{ flexShrink: 0 }}>
         {icons[type]}
       </div>

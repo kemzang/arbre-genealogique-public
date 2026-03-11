@@ -22,10 +22,13 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error('Component stack:', errorInfo.componentStack);
   }
 
   resetError = () => {
     this.setState({ hasError: false, error: undefined });
+    // Recharger la page pour un reset complet
+    window.location.reload();
   };
 
   render() {

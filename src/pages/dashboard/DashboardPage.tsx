@@ -99,16 +99,29 @@ export default function DashboardPage() {
 
   // Initialize user and families
   useEffect(() => {
-    // Validate and fix user data if needed
-    const u = authService.validateAndFixUserData();
-    if (!u) {
-      navigate('/');
-      return;
-    }
+    const initializeData = async () => {
+      try {
+        // Validate and fix user data if needed
+        const u = authService.validateAndFixUserData();
+        if (!u) {
+          navigate('/');
+          return;
+        }
+        
+        console.log('DashboardPage - Validated user:', u);
+        setUser(u);
+        
+        // Initialize families
+        if (familyData.initializeFamilies) {
+          await familyData.initializeFamilies();
+        }
+      } catch (error) {
+        console.error('Error initializing dashboard:', error);
+        toast.error('Erreur lors du chargement du dashboard');
+      }
+    };
     
-    console.log('DashboardPage - Validated user:', u);
-    setUser(u);
-    familyData.initializeFamilies();
+    initializeData();
   }, [navigate]);
 
   // Refetch media when filter changes

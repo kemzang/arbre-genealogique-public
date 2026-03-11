@@ -57,7 +57,7 @@ export const useFamilyData = () => {
 
   const initializeFamilies = useCallback(async () => {
     try {
-      setIsLoading(false);
+      setIsLoading(true);
       setTreeData({ persons: [], relationships: [] });
       setChatRooms([]);
       setMessages([]);
@@ -73,7 +73,9 @@ export const useFamilyData = () => {
         }
       }
     } catch (err) {
-      console.log("Backend not accessible, using offline mode");
+      console.error("Error loading families:", err);
+    } finally {
+      setIsLoading(false);
     }
   }, [loadFamilyData]);
 
