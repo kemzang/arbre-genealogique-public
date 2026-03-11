@@ -495,12 +495,4 @@ export const TreeVisualization = memo(({
       </button>
     </>
   );
-}, (prevProps, nextProps) => {
-  // Custom comparison pour éviter les re-renders inutiles
-  return (
-    prevProps.treeZoom === nextProps.treeZoom &&
-    prevProps.treeData === nextProps.treeData &&
-    JSON.stringify(prevProps.treeData?.persons) === JSON.stringify(nextProps.treeData?.persons) &&
-    JSON.stringify(prevProps.treeData?.relationships) === JSON.stringify(nextProps.treeData?.relationships)
-  );
 });

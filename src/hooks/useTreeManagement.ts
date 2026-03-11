@@ -108,18 +108,15 @@ export const useTreeManagement = (
       }
 
       // Reset form state
-      safeSetState(() => {
-        setShowAddPersonModal(false);
-        setNewPerson({ firstName: '', lastName: '', gender: 'M', birthDate: '' });
-        setRelatedPersonId(null);
-        setRelationshipType('CHILD');
-      });
+      setShowAddPersonModal(false);
+      setNewPerson({ firstName: '', lastName: '', gender: 'M', birthDate: '' });
+      setRelatedPersonId(null);
+      setRelationshipType('CHILD');
 
       // Reload tree data
       const updatedTree = await treeService.getTree(currentFamily.familyId);
-      safeSetState(() => {
-        onTreeUpdate(updatedTree);
-      });
+      console.log('Tree updated:', updatedTree);
+      onTreeUpdate(updatedTree);
       
       toast.success("Membre ajouté avec succès !");
       

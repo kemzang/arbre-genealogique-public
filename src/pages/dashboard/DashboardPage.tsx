@@ -80,7 +80,11 @@ export default function DashboardPage() {
   const treeManagement = useTreeManagement(
     familyData.currentFamily, 
     familyData.treeData, 
-    (tree) => familyData.setTreeData?.(tree),
+    (tree) => {
+      if (familyData.setTreeData) {
+        familyData.setTreeData(tree);
+      }
+    },
     toast
   );
   const events = useEvents(familyData.currentFamily, familyData.setFamilyEvents, toast);
