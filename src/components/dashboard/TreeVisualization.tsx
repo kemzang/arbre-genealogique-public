@@ -302,23 +302,19 @@ export const TreeVisualization = memo(({
                     x2={cw} y2={targetY + 80} 
                     stroke="rgba(212, 175, 55, 0.1)" strokeWidth="1" strokeDasharray="15,10" 
                   />
-                  <foreignObject x={20} y={targetY - 30} width={250} height={50}>
-                    <div className="generation-label" style={{ 
-                      color: '#D4AF37', 
-                      fontSize: '0.7rem', 
-                      fontWeight: 900, 
+                  <text 
+                    x={20} 
+                    y={targetY + 50} 
+                    fill="#D4AF37" 
+                    fontSize="12" 
+                    fontWeight="900"
+                    style={{ 
                       textTransform: 'uppercase', 
-                      letterSpacing: '3px',
-                      background: 'rgba(26, 26, 29, 0.8)',
-                      padding: '4px 15px',
-                      borderRadius: '30px',
-                      width: 'fit-content',
-                      border: '1px solid rgba(212, 175, 55, 0.3)',
-                      boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
-                    }}>
-                      Génération {i + 1}
-                    </div>
-                  </foreignObject>
+                      letterSpacing: '3px'
+                    }}
+                  >
+                    Génération {i + 1}
+                  </text>
                 </g>
               );
             })}
@@ -498,5 +494,13 @@ export const TreeVisualization = memo(({
         <span>Ajouter</span>
       </button>
     </>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison pour éviter les re-renders inutiles
+  return (
+    prevProps.treeZoom === nextProps.treeZoom &&
+    prevProps.treeData === nextProps.treeData &&
+    JSON.stringify(prevProps.treeData?.persons) === JSON.stringify(nextProps.treeData?.persons) &&
+    JSON.stringify(prevProps.treeData?.relationships) === JSON.stringify(nextProps.treeData?.relationships)
   );
 });

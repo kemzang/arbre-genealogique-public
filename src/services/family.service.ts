@@ -132,7 +132,7 @@ export const familyService = {
 
   // 🚀 NOUVEAU : Obtenir les demandes de fusion en attente
   async getPendingFusionRequests(): Promise<FamilyMergeRequest[]> {
-    const response = await api.get<FamilyMergeRequest[]>('/family/fusion-requests');
+    const response = await api.get<FamilyMergeRequest[]>('/family/fusion-request');
     return response.data;
   }
 };
