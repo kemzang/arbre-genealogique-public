@@ -9,6 +9,7 @@ import DashboardPage from './pages/dashboard/page'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import ErrorBoundary from './components/ErrorBoundary'
 import { ToastProvider } from './contexts/ToastContext.tsx'
+import { Loader } from './components/Loader'
 import { authService, type User } from './services/auth.service';
 
 function AuthPage() {
@@ -74,12 +75,7 @@ function SuperAdminRoute({ children }: { children: React.ReactNode }) {
   }, []);
   
   if (isLoading) {
-    return (
-      <div className="loader-page">
-        <span className="loader"></span>
-        <p>Vérification des permissions...</p>
-      </div>
-    );
+    return <Loader size="large" text="Vérification des permissions..." fullScreen />;
   }
   
   if (!user) {

@@ -29,6 +29,7 @@ import { MediaViewer } from '../../components/dashboard/MediaViewer';
 import { AddPersonModal } from '../../components/dashboard/AddPersonModal';
 import { PersonDetailModal } from '../../components/dashboard/PersonDetailModal';
 import { RelationshipDetailModal } from '../../components/dashboard/RelationshipDetailModal';
+import { Loader } from '../../components/Loader';
 
 // Services
 import { authService, type User } from '../../services/auth.service';
@@ -265,12 +266,7 @@ export default function DashboardPage() {
   };
 
   if (familyData.isLoading) {
-    return (
-      <div className="loader-page">
-        <span className="loader"></span> 
-        <p>Chargement...</p>
-      </div>
-    );
+    return <Loader size="large" text="Chargement de vos données..." fullScreen />;
   }
 
   return (

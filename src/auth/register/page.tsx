@@ -1,9 +1,11 @@
-
 import { useState, useRef } from 'react';
 import { authService } from '../../services/auth.service';
 import { profileService } from '../../services/profile.service';
+import { useToastContext } from '../../hooks/useToastContext';
+import { ButtonLoader } from '../../components/Loader';
 
 export default function RegisterPage({onSwitch}: {onSwitch: () => void}) {
+  const toast = useToastContext();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,13 +24,13 @@ export default function RegisterPage({onSwitch}: {onSwitch: () => void}) {
     try {
       // Validation via le service
       if (!file.type.startsWith('image/')) {
-        alert("Seules les images sont autorisées pour la photo de profil.");
+        toast.warning("Seules les images sont autorisées pour la photo de profil.");
         return;
       }
       
       const maxSize = 5 * 1024 * 1024; // 5MB
       if (file.size > maxSize) {
-        alert("La photo de profil ne peut pas dépasser 5MB.");
+        toast.warning("La photo de profil ne peut pas dépasser 5MB.");
         return;
       }
       
@@ -41,7 +43,7 @@ export default function RegisterPage({onSwitch}: {onSwitch: () => void}) {
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Erreur lors de la sélection de la photo');
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la sélection de la photo');
     }
   };
 
@@ -51,6 +53,7 @@ export default function RegisterPage({onSwitch}: {onSwitch: () => void}) {
 
     if (!name.trim() || !email.trim() || !password.trim()) {
       setErrorMessage('Tous les champs sont requis.');
+      toast.warning('Tous les champs sont requis.');
       return;
     }
 
@@ -66,12 +69,21 @@ export default function RegisterPage({onSwitch}: {onSwitch: () => void}) {
         profilePictureUrl,
       });
 
-      alert('Inscription réussie ! Vous pouvez maintenant vous connecter.');
-      setIsLoading(false);
-      onSwitch();
-    } catch (err) {
+      toast.success('Inscription réussie ! Vous pouvez maintenant vous connecter.');
+      
+      // Attendre un peu pour que l'utilisateur voie le toast
+      setTimeout(() => {
+        setIsLoading(false);
+        onSwitch();
+      }, 1000);
+      
+    } catch (err: any) {
       console.error('Erreur d\'inscription:', err);
-      setErrorMessage('Erreur lors de l\'inscription. L\'email est peut-être déjà utilisé ou le serveur est indisponible.');
+      const errorMsg = err.userMessage || 
+        err.response?.data?.message || 
+        'Erreur lors de l\'inscription. L\'email est peut-être déjà utilisé ou le serveur est indisponible.';
+      setErrorMessage(errorMsg);
+      toast.error(errorMsg);
       setIsLoading(false);
     }
   };
@@ -155,7 +167,14 @@ export default function RegisterPage({onSwitch}: {onSwitch: () => void}) {
           </p>
         )}
         <button type="submit" disabled={isLoading}>
-            {isLoading ? <><span className="loader"></span> Inscription...</> : 'S\'inscrire'}
+          {isLoading ? (
+            <>
+              <ButtonLoader />
+              Inscription en cours...
+            </>
+          ) : (
+            'S\'inscrire'
+          )}
         </button>
         <button type="button" className="ghost mobile-only" onClick={onSwitch}>Se connecter</button>
       </form>

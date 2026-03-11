@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/auth.service';
+import { useToastContext } from '../../hooks/useToastContext';
+import { ButtonLoader } from '../../components/Loader';
 
 export default function LoginPage({onSwitch}: {onSwitch: () => void}) {
+  const toast = useToastContext();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -15,10 +18,17 @@ export default function LoginPage({onSwitch}: {onSwitch: () => void}) {
     setIsLoading(true);
     try {
       await authService.login({ email, password });
-      navigate('/dashboard');
-    } catch (error) {
+      toast.success('Connexion réussie !');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
+    } catch (error: any) {
       console.error('Erreur de login:', error);
-      setErrorMessage('Identifiants invalides ou serveur indisponible.');
+      const errorMsg = error.userMessage || 
+        error.response?.data?.message || 
+        'Identifiants invalides ou serveur indisponible.';
+      setErrorMessage(errorMsg);
+      toast.error(errorMsg);
       setIsLoading(false);
     }
   };
@@ -48,7 +58,14 @@ export default function LoginPage({onSwitch}: {onSwitch: () => void}) {
           </p>
         )}
         <button type="submit" disabled={isLoading}>
-          {isLoading ? <><span className="loader"></span> Connexion...</> : 'Se connecter'}
+          {isLoading ? (
+            <>
+              <ButtonLoader />
+              Connexion en cours...
+            </>
+          ) : (
+            'Se connecter'
+          )}
         </button>
         <p style={{ margin: '12px 0 0', fontSize: 14 }}>
           Pas encore de compte ?{' '}
