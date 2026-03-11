@@ -1,0 +1,249 @@
+/* ========================================
+   RESPONSIVE DESIGN - AUTH PAGES
+   ======================================== */
+
+/* Tablettes (max 1024px) */
+@media (max-width: 1024px) {
+  .container {
+    width: 90%;
+    max-width: 800px;
+  }
+
+  .form-container {
+    padding: 40px 30px;
+  }
+
+  .overlay-container {
+    .overlay-panel {
+      padding: 30px;
+      
+      h1 {
+        font-size: 1.8rem;
+      }
+      
+      p {
+        font-size: 0.95rem;
+      }
+    }
+  }
+}
+
+/* Mobile (max 768px) */
+@media (max-width: 768px) {
+  .app-body {
+    padding: 1rem;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 100%;
+    min-height: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    
+    /* Masquer l'overlay sur mobile */
+    .overlay-container {
+      display: none;
+    }
+
+    /* Afficher les deux formulaires en mode empilé */
+    &.right-panel-active {
+      .sign-in-container {
+        transform: translateX(0);
+        opacity: 0;
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      .sign-up-container {
+        transform: translateX(0);
+        opacity: 1;
+        z-index: 5;
+        pointer-events: all;
+      }
+    }
+
+    .form-container {
+      position: relative;
+      width: 100%;
+      height: auto;
+      min-height: auto;
+      transition: all 0.3s ease-in-out;
+      padding: 30px 20px;
+
+      &.sign-in-container {
+        left: 0;
+        z-index: 2;
+      }
+
+      &.sign-up-container {
+        left: 0;
+        opacity: 0;
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+      }
+
+      input {
+        padding: 12px 15px;
+        font-size: 0.95rem;
+        margin: 8px 0;
+      }
+
+      button {
+        padding: 12px 45px;
+        font-size: 0.95rem;
+        margin-top: 15px;
+      }
+
+      /* Afficher les boutons de switch sur mobile */
+      button.mobile-only {
+        display: block !important;
+        margin-top: 15px;
+        background: transparent;
+        border: 2px solid #326C58;
+        color: #326C58;
+        
+        &:hover {
+          background: rgba(50, 108, 88, 0.1);
+        }
+      }
+
+      /* Photo de profil sur mobile */
+      .profile-picture-section {
+        margin-bottom: 1rem;
+        
+        .profile-picture-upload {
+          .profile-picture-preview {
+            width: 100px;
+            height: 100px;
+            
+            .placeholder {
+              span {
+                font-size: 2rem;
+              }
+              
+              p {
+                font-size: 0.75rem;
+              }
+            }
+          }
+        }
+
+        small {
+          font-size: 0.75rem;
+        }
+      }
+    }
+  }
+}
+
+/* Très petits mobiles (max 480px) */
+@media (max-width: 480px) {
+  .app-body {
+    padding: 0.5rem;
+  }
+
+  .container {
+    border-radius: 12px;
+    
+    .form-container {
+      padding: 25px 15px;
+
+      h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      input {
+        padding: 10px 12px;
+        font-size: 0.9rem;
+        margin: 6px 0;
+      }
+
+      button {
+        padding: 10px 35px;
+        font-size: 0.9rem;
+        margin-top: 12px;
+      }
+
+      a {
+        font-size: 0.85rem;
+      }
+
+      p {
+        font-size: 0.85rem;
+      }
+
+      .profile-picture-section {
+        .profile-picture-upload {
+          .profile-picture-preview {
+            width: 80px;
+            height: 80px;
+            
+            .placeholder {
+              span {
+                font-size: 1.5rem;
+              }
+              
+              p {
+                font-size: 0.7rem;
+              }
+            }
+          }
+
+          button.remove-picture {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+          }
+        }
+      }
+
+      .form-error {
+        font-size: 0.8rem !important;
+      }
+    }
+  }
+}
+
+/* Landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .container {
+    .form-container {
+      padding: 20px 15px;
+      
+      h1 {
+        font-size: 1.3rem;
+        margin-bottom: 0.75rem;
+      }
+
+      input {
+        padding: 8px 12px;
+        margin: 5px 0;
+      }
+
+      button {
+        padding: 8px 30px;
+        margin-top: 10px;
+      }
+
+      .profile-picture-section {
+        margin-bottom: 0.75rem;
+        
+        .profile-picture-upload {
+          .profile-picture-preview {
+            width: 70px;
+            height: 70px;
+          }
+        }
+
+        small {
+          font-size: 0.7rem;
+        }
+      }
+    }
+  }
+}

@@ -3093,3 +3093,7 @@
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
   }
 }
+
+
+/* Import responsive styles */
+@import './dashboard-responsive.scss';

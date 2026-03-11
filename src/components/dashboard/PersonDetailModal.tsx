@@ -1,5 +1,5 @@
 import React, { memo, useState, useEffect, useRef } from 'react';
-import { X, Edit2, Save, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Edit2, Save, Upload } from 'lucide-react';
 import { treeService, type PersonDetails, type Person } from '../../services/tree.service';
 import { mediaService } from '../../services/media.service';
 
@@ -348,33 +348,6 @@ export const PersonDetailModal = memo(({
                       <Upload size={16} />
                       {selectedFile ? 'Changer la photo' : 'Sélectionner une photo'}
                     </label>
-                    
-                    {/* Option pour entrer une URL manuellement */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const url = prompt('Entrez l\'URL de la photo de profil:', editForm.profilePictureUrl || '');
-                        if (url !== null) {
-                          setEditForm({ ...editForm, profilePictureUrl: url || '' });
-                          handleRemoveFile(); // Retirer le fichier sélectionné si on utilise une URL
-                        }
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 16px',
-                        background: '#6c757d',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '0.9rem'
-                      }}
-                    >
-                      <ImageIcon size={16} />
-                      Ou entrer une URL
-                    </button>
                   </div>
 
                   {/* Barre de progression de l'upload */}
