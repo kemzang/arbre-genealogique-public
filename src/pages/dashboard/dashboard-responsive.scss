@@ -53,17 +53,22 @@
 @media (max-width: 768px) {
   .dashboard-container {
     header {
-      padding: 0.5rem 0.75rem;
+      padding: 0.75rem;
       position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 60px;
       
       .brand {
-        flex: 1;
         display: flex;
         align-items: center;
         gap: 0.75rem;
+        flex: 0 0 auto;
         
         h1 {
           font-size: 1.1rem;
+          margin: 0;
         }
         
         .tree-icon {
@@ -73,10 +78,10 @@
       }
 
       .user-controls {
-        gap: 0.5rem;
-        flex: 0;
-        width: auto;
-        padding-right: 60px; // Espace pour le bouton hamburger
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 0 0 auto;
         
         .btn-nav {
           display: none; // Masquer tous les boutons de navigation sur mobile
@@ -110,37 +115,40 @@
     }
   }
   
-  // Menu hamburger pour la navigation
+  // Menu hamburger pour la navigation - aligné dans le header
   .mobile-nav-toggle {
-    display: flex;
-    position: fixed;
-    top: 15px;
-    right: 15px;
-    z-index: 1000;
-    background: #326C58;
-    border: none;
+    display: flex !important;
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    transform: none !important;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 8px;
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 5px;
-    padding: 10px;
+    gap: 4px;
+    padding: 8px;
     cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    flex-shrink: 0;
     
     span {
       display: block;
-      width: 25px;
-      height: 3px;
+      width: 22px;
+      height: 2.5px;
       background: white;
       border-radius: 2px;
       transition: all 0.3s ease;
     }
     
     &:hover {
-      background: #245242;
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
     }
   }
   
