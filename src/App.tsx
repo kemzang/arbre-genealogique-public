@@ -7,6 +7,7 @@ import ForgotPasswordPage from './auth/forgot-password/page'
 import ResetPasswordPage from './auth/reset-password/page'
 import DashboardPage from './pages/dashboard/page'
 import AdminDashboard from './pages/admin/AdminDashboard'
+import ProfilePage from './pages/profile/ProfilePage'
 import ErrorBoundary from './components/ErrorBoundary'
 import { ToastProvider } from './contexts/ToastContext.tsx'
 import { Loader } from './components/Loader'
@@ -155,6 +156,16 @@ function App() {
               <ProtectedRoute>
                 <ErrorBoundary>
                   <DashboardPage />
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <ErrorBoundary>
+                  <ProfilePage />
                 </ErrorBoundary>
               </ProtectedRoute>
             } 

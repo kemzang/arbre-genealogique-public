@@ -443,7 +443,7 @@ export default function DashboardPage() {
               <Shield size={16} style={{marginRight: 8, verticalAlign: 'middle'}}/> Admin
             </button>
           )}
-          <div className="profile">
+          <div className="profile" onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }} title="Mon profil">
             <div className="avatar">
               {user?.displayName?.[0].toUpperCase() || 'U'}
             </div>
