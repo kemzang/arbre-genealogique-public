@@ -53,27 +53,43 @@
 @media (max-width: 768px) {
   .dashboard-container {
     header {
-      padding: 0.75rem;
+      padding: 0.5rem 0.75rem;
       position: relative;
       
-      .brand h1 {
-        font-size: 1.2rem;
+      .brand {
+        flex: 1;
+        
+        h1 {
+          font-size: 1.1rem;
+        }
       }
 
       .user-controls {
-        width: 100%;
-        justify-content: flex-end;
         gap: 0.5rem;
+        flex: 0;
+        width: auto;
         
         .btn-nav {
           display: none; // Masquer tous les boutons de navigation sur mobile
         }
 
         .profile {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          
           .avatar {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
           }
+          
+          .info {
+            display: none; // Masquer les infos texte
+          }
+        }
+        
+        .icon-only {
+          display: none; // Masquer le bouton déconnexion du header
         }
       }
     }
@@ -88,27 +104,28 @@
   // Menu hamburger pour la navigation
   .mobile-nav-toggle {
     display: flex;
-    position: fixed;
-    top: 15px;
-    right: 15px;
-    z-index: 1000;
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%);
+    z-index: 100;
     background: #326C58;
     border: none;
     border-radius: 8px;
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 5px;
-    padding: 10px;
+    gap: 4px;
+    padding: 8px;
     cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     
     span {
       display: block;
-      width: 25px;
-      height: 3px;
+      width: 22px;
+      height: 2.5px;
       background: white;
       border-radius: 2px;
       transition: all 0.3s ease;
@@ -199,6 +216,17 @@
           color: white;
           border-color: #326C58;
         }
+        
+        &.logout-btn {
+          background: #fff;
+          color: #c0392b;
+          
+          &:hover {
+            background: #c0392b;
+            color: white;
+            border-color: #c0392b;
+          }
+        }
       }
     }
   }
@@ -213,27 +241,54 @@
     to { transform: translateX(0); }
   }
 
-  /* Chat Interface Mobile */
+  /* Chat Interface Mobile - Disposition verticale comme WhatsApp */
   .chat-interface {
     flex-direction: column;
+    height: calc(100vh - 80px);
     
     .sidebar {
       width: 100%;
-      max-height: 150px;
+      max-height: none;
+      height: auto;
+      border-right: none;
+      border-bottom: 2px solid #e0e0e0;
       
       .rooms {
         display: flex;
-        overflow-x: auto;
-        flex-direction: row;
+        flex-direction: column; // Vertical comme WhatsApp
+        overflow-y: auto;
+        overflow-x: hidden;
+        max-height: 40vh;
         
         .room-item {
-          min-width: 120px;
-          flex-direction: column;
+          width: 100%;
+          min-width: auto;
+          flex-direction: row;
           padding: 0.75rem;
+          border-bottom: 1px solid #f0f0f0;
+          
+          .room-avatar {
+            width: 50px;
+            height: 50px;
+            flex-shrink: 0;
+          }
           
           .room-info {
+            flex: 1;
+            margin-left: 12px;
+            
+            .room-name {
+              font-size: 0.95rem;
+              font-weight: 600;
+            }
+            
             .room-description {
-              display: none;
+              display: block;
+              font-size: 0.8rem;
+              color: #666;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             }
           }
         }
@@ -241,8 +296,13 @@
     }
 
     .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      
       .messages {
         padding: 1rem;
+        flex: 1;
         
         .msg {
           max-width: 85%;

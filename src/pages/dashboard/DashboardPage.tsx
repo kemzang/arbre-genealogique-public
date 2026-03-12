@@ -345,6 +345,16 @@ export default function DashboardPage() {
                       <Shield size={16} /> Admin
                     </button>
                   )}
+                  <button 
+                    className="btn-nav logout-btn" 
+                    onClick={() => {
+                      setMobileNavOpen(false);
+                      handleLogout();
+                    }}
+                    style={{ marginTop: '20px', borderTop: '1px solid #ddd', paddingTop: '20px' }}
+                  >
+                    <LogOut size={16} /> Déconnexion
+                  </button>
                 </nav>
               </div>
             </div>
