@@ -42,6 +42,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'TREE' | 'CHAT' | 'EVENTS' | 'FUSION'>('TREE');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   
   // Family selector state
   const [showFamilySelector, setShowFamilySelector] = useState(false);
@@ -271,6 +272,86 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-container">
+      {/* Menu hamburger pour mobile */}
+      {familyData.currentFamily && (
+        <>
+          <button 
+            className="mobile-nav-toggle" 
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+            aria-label="Menu de navigation"
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+
+          {mobileNavOpen && (
+            <div className="mobile-nav-overlay" onClick={() => setMobileNavOpen(false)}>
+              <div className="mobile-nav-menu" onClick={(e) => e.stopPropagation()}>
+                <button 
+                  className="mobile-nav-close" 
+                  onClick={() => setMobileNavOpen(false)}
+                >
+                  ✕
+                </button>
+                <nav>
+                  <button 
+                    className={`btn-nav ${activeTab === 'TREE' ? 'active' : ''}`} 
+                    onClick={() => {
+                      setActiveTab('TREE');
+                      setMobileNavOpen(false);
+                    }}
+                  >
+                    <Users size={16} /> Arbre
+                  </button>
+                  <button 
+                    className={`btn-nav ${activeTab === 'CHAT' ? 'active' : ''}`} 
+                    onClick={() => {
+                      setActiveTab('CHAT');
+                      setMobileNavOpen(false);
+                    }}
+                  >
+                    <MessageCircle size={16} /> Chat & Médias
+                  </button>
+                  <button 
+                    className={`btn-nav ${activeTab === 'EVENTS' ? 'active' : ''}`} 
+                    onClick={() => {
+                      setActiveTab('EVENTS');
+                      setMobileNavOpen(false);
+                    }}
+                  >
+                    <Calendar size={16} /> Événements
+                  </button>
+                  {familyData.currentFamily.role === 'ADMIN' && (
+                    <button 
+                      className={`btn-nav ${activeTab === 'FUSION' ? 'active' : ''}`} 
+                      onClick={() => {
+                        setActiveTab('FUSION');
+                        setMobileNavOpen(false);
+                      }}
+                    >
+                      <ArrowRight size={16} /> Fusion
+                    </button>
+                  )}
+                  {authService.isSuperAdmin(user) && (
+                    <button 
+                      className="btn-nav admin-btn" 
+                      onClick={() => {
+                        navigate('/admin');
+                        setMobileNavOpen(false);
+                      }}
+                      title="Panneau d'Administration"
+                    >
+                      <Shield size={16} /> Admin
+                    </button>
+                  )}
+                </nav>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
       {/* Media Viewer Modal */}
       <MediaViewer
         showMediaViewer={mediaViewer.showMediaViewer}
