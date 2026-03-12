@@ -126,14 +126,15 @@ export default function ProfilePage() {
 
       const updatedProfile = await profileService.updateProfile(updateData);
       
-      // Mettre à jour le localStorage
+      // Mettre à jour le localStorage directement
       const currentUser = authService.getCurrentUser();
       if (currentUser) {
-        authService.setCurrentUser({
+        const updatedUser = {
           ...currentUser,
           displayName: updatedProfile.displayName,
           profilePictureUrl: updatedProfile.profilePictureUrl
-        });
+        };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
       }
 
       setProfile(updatedProfile);
