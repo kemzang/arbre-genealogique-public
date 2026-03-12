@@ -14,6 +14,7 @@ import { authService, type User } from './services/auth.service';
 
 function AuthPage() {
   const [isSignIn, setIsSignIn] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Rediriger si déjà connecté
   if (authService.getCurrentUser()) {
@@ -22,6 +23,51 @@ function AuthPage() {
 
   return (
     <div className='app-body'>
+      {/* Menu hamburger pour mobile */}
+      <button 
+        className="mobile-menu-toggle" 
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        aria-label="Menu"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      {/* Menu mobile */}
+      {mobileMenuOpen && (
+        <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}>
+          <div className="mobile-menu" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="mobile-menu-close" 
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              ✕
+            </button>
+            <nav>
+              <button 
+                className={isSignIn ? 'active' : ''} 
+                onClick={() => {
+                  setIsSignIn(true);
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Se connecter
+              </button>
+              <button 
+                className={!isSignIn ? 'active' : ''} 
+                onClick={() => {
+                  setIsSignIn(false);
+                  setMobileMenuOpen(false);
+                }}
+              >
+                S'inscrire
+              </button>
+            </nav>
+          </div>
+        </div>
+      )}
+
       <div className={`container ${!isSignIn ? 'right-panel-active' : ''}`} id="container">
         <RegisterPage onSwitch={() => setIsSignIn(true)} />
         <LoginPage onSwitch={() => setIsSignIn(false)} />
