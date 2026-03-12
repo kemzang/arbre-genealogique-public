@@ -2,6 +2,16 @@
    RESPONSIVE DESIGN - DASHBOARD
    ======================================== */
 
+/* Par défaut - Cacher le menu hamburger sur desktop */
+.mobile-nav-toggle {
+  display: none;
+}
+
+.mobile-nav-overlay,
+.mobile-nav-menu {
+  display: none;
+}
+
 /* Tablettes et petits écrans (max 1024px) */
 @media (max-width: 1024px) {
   .dashboard-container {
@@ -31,6 +41,16 @@
       padding: 1rem;
       gap: 1rem;
     }
+  }
+  
+  // Cacher le bouton hamburger sur tablette et desktop
+  .mobile-nav-toggle {
+    display: none !important;
+  }
+  
+  .mobile-nav-overlay,
+  .mobile-nav-menu {
+    display: none !important;
   }
 
   .chat-interface {
@@ -115,7 +135,7 @@
     }
   }
   
-  // Menu hamburger pour la navigation - aligné dans le header
+  // Menu hamburger pour la navigation - aligné dans le header - VISIBLE UNIQUEMENT SUR MOBILE
   .mobile-nav-toggle {
     display: flex !important;
     position: relative !important;
