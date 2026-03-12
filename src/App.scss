@@ -395,7 +395,6 @@ input {
         height: auto !important;
         min-height: 100vh;
         transition: none;
-        display: flex !important;
         align-items: center;
         justify-content: center;
         opacity: 1 !important;
@@ -466,24 +465,24 @@ input {
         }
     }
     
-    /* Logic to show/hide based on class */
+    /* Logic to show/hide based on class - CORRIGÉ */
     .sign-in-container {
-        display: flex !important;
+        display: flex !important; // Afficher connexion par défaut
         z-index: 2;
     }
     
     .sign-up-container {
-        display: none !important;
+        display: none !important; // Cacher inscription par défaut
         z-index: 1;
     }
 
     .container.right-panel-active .sign-in-container {
-        display: none !important;
+        display: none !important; // Cacher connexion quand inscription active
         z-index: 1;
     }
     
     .container.right-panel-active .sign-up-container {
-        display: flex !important;
+        display: flex !important; // Afficher inscription quand active
         z-index: 2;
         transform: none;
         animation: none;
