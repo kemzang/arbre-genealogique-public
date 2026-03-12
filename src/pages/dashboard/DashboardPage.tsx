@@ -222,11 +222,43 @@ export default function DashboardPage() {
     setCreateFamilyError(null);
     setIsCreatingFamily(true);
     try {
-      await familyService.createFamily(name);
+      // Créer la famille
+      const newFamily = await familyService.createFamily(name);
+      
+      // Recharger les familles pour obtenir le statut de membre
       await familyData.initializeFamilies();
+      
+      // Ajouter automatiquement l'utilisateur comme première personne de l'arbre
+      if (user && newFamily.id) {
+        try {
+          // Extraire prénom et nom de famille du displayName
+          const nameParts = user.displayName?.split(' ') || ['', ''];
+          const firstName = nameParts[0] || 'Utilisateur';
+          const lastName = nameParts.slice(1).join(' ') || 'Famille';
+          
+          await treeService.createPerson({
+            familyId: newFamily.id,
+            firstName: firstName,
+            lastName: lastName,
+            gender: 'O', // Genre non spécifié par défaut
+            profilePictureUrl: user.profilePictureUrl,
+            linkedUserId: user.id,
+            bio: 'Fondateur de la famille'
+          });
+          
+          // Recharger l'arbre pour afficher la nouvelle personne
+          const updatedTree = await treeService.getTree(newFamily.id);
+          familyData.setTreeData?.(updatedTree);
+          
+          toast.success('Famille créée avec succès ! Vous êtes maintenant dans l\'arbre généalogique.');
+        } catch (personError) {
+          console.error('Erreur lors de l\'ajout de l\'utilisateur à l\'arbre:', personError);
+          toast.warning('Famille créée, mais vous devez vous ajouter manuellement à l\'arbre.');
+        }
+      }
+      
       setShowCreateFamilyModal(false);
       setNewFamilyName('');
-      toast.success('Famille créée avec succès !');
     } catch (e: any) {
       console.error('Erreur création famille:', e);
       const errorMessage = e.userMessage || 
