@@ -67,6 +67,7 @@ export default function LoginPage({onSwitch}: {onSwitch: () => void}) {
             'Se connecter'
           )}
         </button>
+        <button type="button" className="ghost mobile-only" onClick={onSwitch}>S'inscrire</button>
         <p style={{ margin: '12px 0 0', fontSize: 14 }}>
           Pas encore de compte ?{' '}
           <button type="button" className="link-button" onClick={onSwitch}>
