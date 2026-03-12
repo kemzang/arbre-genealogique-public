@@ -375,24 +375,32 @@ input {
         display: block;
     }
     
+    .app-body {
+        padding: 0;
+        background: #f6f5f7;
+    }
+    
     .container {
         width: 100vw;
         min-height: 100vh;
         border-radius: 0;
         box-shadow: none;
-        display: flex;
-        flex-direction: column;
+        display: block;
+        background: #fff;
     }
 
     .form-container {
-        position: relative;
-        width: 100%;
-        height: auto;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
         min-height: 100vh;
         transition: none;
-        display: flex;
+        display: flex !important;
         align-items: center;
         justify-content: center;
+        opacity: 1 !important;
+        transform: none !important;
+        padding: 80px 20px 40px;
     }
     
     .sign-in-container, .sign-up-container {
@@ -402,7 +410,7 @@ input {
     }
 
     .overlay-container {
-        display: none;
+        display: none !important;
     }
     
     .mobile-only {
@@ -415,9 +423,11 @@ input {
     /* Mobile form adjustments */
     form {
         padding: 20px 30px;
-        justify-content: center;
+        justify-content: flex-start;
         width: 100%;
         max-width: 400px;
+        background: #fff;
+        overflow-y: auto;
         
         .profile-picture-preview {
             width: 80px;
@@ -458,20 +468,23 @@ input {
     
     /* Logic to show/hide based on class */
     .sign-in-container {
-        display: flex;
+        display: flex !important;
+        z-index: 2;
     }
+    
     .sign-up-container {
-        display: none;
-        opacity: 1;
-        z-index: 5;
+        display: none !important;
+        z-index: 1;
     }
 
     .container.right-panel-active .sign-in-container {
-        display: none;
+        display: none !important;
+        z-index: 1;
     }
     
     .container.right-panel-active .sign-up-container {
-        display: flex;
+        display: flex !important;
+        z-index: 2;
         transform: none;
         animation: none;
     }
